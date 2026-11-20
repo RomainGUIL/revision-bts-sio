@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Révision BTS SIO</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/study.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12685b">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+<a class="skip-link" href="#view" data-a="skip">Aller au contenu</a>
+<!-- Application de révision BTS SIO (2e année). Aucun serveur ni installation : ouvrir ce fichier dans Chrome, Edge ou Firefox.
+     Structure : data/*.js = contenus (voir LISEZMOI.md), js/app.js = toute la logique, css/style.css = apparence. -->
+<header class="top">
+  <button class="icon" id="menuBtn" aria-label="Ouvrir le menu" aria-controls="nav" aria-expanded="false">☰</button>
+  <a class="brand" href="#accueil"><span class="logo">SIO</span>BTS SIO <span>Révision</span></a>
+  <input id="search" type="search" placeholder="Notion, sigle, question…" aria-label="Rechercher dans les révisions">
+  <select id="optSel" aria-label="Mon option" title="Mon option : masque ce qui concerne l'autre option">
+    <option value="">SISR et SLAM</option><option value="SISR">Option SISR</option><option value="SLAM">Option SLAM</option>
+  </select>
+  <button class="btn ghost" id="themeBtn" title="Passer du thème clair au thème sombre">Thème sombre</button>
+</header>
+<div class="layout">
+  <nav id="nav" aria-label="Navigation principale"></nav>
+  <main id="view" tabindex="-1"></main>
+</div>
+<script src="data/questions.js"></script>
+<script src="data/corrections.js"></script>
+<script src="data/docs_questions.js"></script>
+<script src="data/notions.js"></script>
+<script src="data/explications.js"></script>
+<script src="data/entrainement.js"></script>
+<script src="data/entrainement_plus.js"></script>
+<script src="data/tp_sisr.js"></script>
+<script src="data/oral.js"></script>
+<script src="data/methode.js"></script>
+<script src="data/glossaire.js"></script>
+<script src="data/schemas.js"></script>
+<script src="data/erreurs.js"></script>
+<script src="data/python.js"></script>
+<script src="data/pentest.js"></script>
+<script src="data/media.js"></script>
+<script src="js/study.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
+

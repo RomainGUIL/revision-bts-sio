@@ -1,0 +1,83 @@
+/* SIMULATEUR D'ORAL — questions de jury écrites à la main (page « Simulateur d'oral »).
+   Ce ne sont pas des questions officielles : elles reprennent ce que les jurys demandent habituellement à l'E5, à l'E6 et à l'oral d'anglais.
+   ORAL[matière] = [ [question, éléments attendus / conseils pour bien répondre], … ]
+   Les questions marquées « (ta réalisation) » se préparent avec TES propres réalisations : réponds à voix haute comme devant le jury. */
+window.ORAL = {
+e5: [
+  ["Présentez-vous et présentez votre parcours en deux minutes.", "Formation, option, entreprise(s) de stage ou d'alternance, missions principales, projet professionnel. Ton posé, regard vers le jury, pas de lecture. Termine par ce que tu vas montrer."],
+  ["Montrez-nous votre portfolio et expliquez comment il est organisé.", "Pages : présentation, parcours, réalisations, veille, compétences. Montre le tableau de synthèse et comment chaque réalisation renvoie aux compétences du bloc 1."],
+  ["Parmi vos réalisations, laquelle vous a le plus appris et pourquoi ? (ta réalisation)", "Contexte, besoin, ce que tu as fait toi-même, difficultés rencontrées et comment tu les as surmontées, résultat, ce que tu ferais autrement."],
+  ["Un utilisateur vous appelle : « Internet ne marche plus. » Comment procédez-vous ?", "Accueil et qualification (ticket), questions pour délimiter (un poste ou tous ? quel message ?), diagnostic méthodique du plus simple au plus complexe (câble/Wi-Fi, ipconfig, ping passerelle, ping 8.8.8.8, nslookup), résolution, information de l'utilisateur, clôture et documentation du ticket."],
+  ["Quelle différence faites-vous entre un incident et un problème ? Donnez un exemple vécu.", "Incident : interruption à rétablir vite. Problème : cause racine d'incidents répétés. Exemple tiré de ton stage, avec l'outil de tickets utilisé."],
+  ["Comment priorisez-vous les tickets ?", "Matrice impact × urgence ; un incident qui bloque tout un service passe avant une demande individuelle ; respect des engagements de service (SLA)."],
+  ["Comment gérez-vous le parc informatique de votre entreprise ?", "Outil d'inventaire (GLPI, OCS, agent), suivi des matériels, des logiciels et des licences, cycle de vie (achat, affectation, maintenance, réforme, recyclage DEEE)."],
+  ["Comment vérifiez-vous que les licences logicielles sont respectées ?", "Inventaire des installations vs licences achetées (GLPI), alertes, désinstallation ou achat, risques de contrefaçon."],
+  ["Présentez votre veille technologique.", "Sujet précis et pourquoi, sources fiables (CERT-FR, ANSSI, sites spécialisés), outils (RSS, alertes), fréquence, ce que tu as appris et appliqué."],
+  ["Pourquoi avoir choisi ce sujet de veille ? Qu'est-ce qui a changé depuis que vous avez commencé ?", "Lien avec ton option ou ton entreprise, exemples précis d'évolutions récentes, ton analyse personnelle."],
+  ["Comment avez-vous travaillé en mode projet ? (ta réalisation)", "Cahier des charges, découpage en tâches, planning (Gantt), outils (Trello, Jira, Planner), réunions, bilan et écarts par rapport au prévu."],
+  ["Comment mettez-vous un nouveau service à disposition des utilisateurs ?", "Tests (recette), documentation utilisateur, communication, formation ou accompagnement, support après déploiement, mesure de satisfaction."],
+  ["Comment l'entreprise développe-t-elle sa présence en ligne ? Qu'avez-vous fait pour cela ?", "Site web, réseaux sociaux, référencement, e-réputation, conformité (mentions légales, RGPD, cookies), ta contribution concrète."],
+  ["Que faites-vous pour sécuriser un poste avant de le remettre à un utilisateur ?", "Mises à jour, antivirus/EDR, compte utilisateur sans droits d'administrateur, chiffrement du disque, intégration au domaine et GPO, sauvegarde des données, inventaire."],
+  ["Montrez-nous en direct une de vos réalisations et expliquez ce qu'on voit. (ta réalisation)", "Prépare un accès qui marche (maquette, captures en secours), commente chaque écran : pourquoi, comment, ce que ça prouve comme compétence."],
+  ["Qu'est-ce que vous auriez fait différemment ?", "Réponse honnête et constructive : une difficulté, ce que tu en as appris, l'amélioration que tu apporterais. Le jury apprécie le recul."],
+  ["Comment organisez-vous votre développement professionnel ?", "Veille, certifications ou MOOC (ANSSI SecNumacadémie, Cisco…), portfolio tenu à jour, projet après le BTS."],
+  ["Un utilisateur refuse d'appliquer la nouvelle procédure de mots de passe. Que faites-vous ?", "Écoute, explication pédagogique des risques, rappel de la charte, aide concrète (gestionnaire de mots de passe), remontée à la hiérarchie si besoin."]
+],
+e6sisr: [
+  ["Présentez votre réalisation : contexte, besoin et solution retenue. (ta réalisation)", "Entreprise (même fictive), problème à résoudre, contraintes, solution choisie et pourquoi elle plutôt qu'une autre, schéma réseau à l'appui."],
+  ["Pourquoi avez-vous choisi cette solution plutôt qu'une autre ?", "Comparer 2 ou 3 solutions (coût, sécurité, compétences, compatibilité, libre ou propriétaire) et justifier ton choix par le besoin."],
+  ["Ajoutez un VLAN pour un nouveau service et faites-lui distribuer des adresses par DHCP.", "Créer le VLAN sur le switch, l'ajouter au trunk, créer l'interface/sous-interface sur le routeur ou pare-feu, l'étendue DHCP, le relais DHCP si le serveur est ailleurs, tester avec un poste (ipconfig /renew)."],
+  ["Un poste n'arrive pas à joindre le serveur. Comment diagnostiquez-vous ?", "Méthode par couches : câble/lien, configuration IP (ipconfig), ping passerelle, ping serveur, tracert, résolution DNS (nslookup), pare-feu, service à l'écoute (Test-NetConnection / ss -tlnp)."],
+  ["Que se passe-t-il si ce serveur tombe en panne ?", "Identifier le point unique de défaillance, dire l'impact, proposer redondance (2e serveur, cluster, réplication), sauvegarde et procédure de restauration."],
+  ["Créez une GPO qui connecte un lecteur réseau aux utilisateurs du service comptabilité.", "Configuration utilisateur > Préférences > Mappages de lecteurs, liaison à l'OU Comptabilité, filtrage éventuel, gpupdate /force, vérification gpresult /r."],
+  ["Expliquez le chemin d'un paquet entre ce poste et Internet.", "Poste → switch (VLAN) → passerelle (routeur/pare-feu) → règles de filtrage → NAT (adresse publique) → FAI. Le retour revient grâce à la table NAT."],
+  ["Comment sauvegardez-vous ces données ? Montrez-moi une restauration.", "Outil, fréquence, rétention, règle 3-2-1, copie hors ligne, RPO/RTO, restauration testée et documentée."],
+  ["Écrivez une règle de pare-feu qui autorise uniquement le web vers le serveur de la DMZ.", "Source any (ou WAN), destination IP du serveur, ports 80/443 TCP, action autoriser ; règle par défaut de refus en dessous ; justifier le moindre privilège."],
+  ["Comment supervisez-vous votre infrastructure ?", "Outil (Zabbix, Centreon), agents ou SNMPv3, indicateurs (CPU, RAM, disque, services), seuils et alertes, qui est prévenu."],
+  ["Montrez-moi ce script et expliquez chaque ligne. (ta réalisation)", "Connaître ton script par cœur : variables, boucles, commandes, gestion des erreurs, planification (cron / tâche planifiée)."],
+  ["Quelle est la différence entre une machine virtuelle et un conteneur ? Pourquoi avoir utilisé l'un ou l'autre ?", "VM = système complet avec son noyau (isolement fort) ; conteneur = partage le noyau de l'hôte (léger, rapide). Justifier selon ton besoin."],
+  ["Comment avez-vous sécurisé l'accès d'administration à vos équipements ?", "SSH au lieu de Telnet, comptes nominatifs, mots de passe forts ou clés, réseau d'administration dédié, journalisation, désactivation des services inutiles."],
+  ["Comment avez-vous testé et documenté votre réalisation ?", "Plan de tests (ce qui était attendu, ce qui a été obtenu, captures), documentation technique (schéma, adressage, procédures), fiche de réalisation."],
+  ["Calculez le masque nécessaire pour un réseau de 50 postes.", "Il faut au moins 50 + passerelle = 51 adresses : 2⁶ − 2 = 62 → /26, masque 255.255.255.192."],
+  ["Votre DNS ne résout plus les noms internes. Que vérifiez-vous ?", "Service DNS démarré, configuration DNS des postes (DHCP option 6), zone et enregistrements, redirecteurs, nslookup / Resolve-DnsName, réplication AD si DNS intégré."],
+  ["Comment un utilisateur nomade accède-t-il aux ressources internes de façon sécurisée ?", "VPN d'accès distant (WireGuard, OpenVPN, IPsec), authentification forte (MFA), filtrage des ressources accessibles, journalisation."]
+],
+e6slam: [
+  ["Présentez votre application : besoin, utilisateurs, fonctionnalités principales. (ta réalisation)", "Contexte de l'entreprise, problème résolu, acteurs, cas d'utilisation principaux, technologies et pourquoi."],
+  ["Montrez-moi l'architecture de votre application.", "Client / serveur / base de données, organisation MVC (dossiers modèles, vues, contrôleurs), routage, accès aux données (PDO, ORM)."],
+  ["Ajoutez un champ « téléphone » au formulaire client, jusqu'à la base de données.", "ALTER TABLE ajout de la colonne, attribut + accesseurs dans la classe, formulaire (vue), contrôleur (récupération + validation), requête préparée INSERT/UPDATE, test."],
+  ["Montrez-moi comment vous vous protégez des injections SQL.", "Requêtes préparées avec paramètres liés partout, jamais de concaténation ; compte SQL à droits limités ; exemple de code à l'écran."],
+  ["Comment stockez-vous les mots de passe des utilisateurs ?", "password_hash / password_verify (bcrypt ou Argon2), jamais en clair ni en MD5, sel intégré, politique de mot de passe."],
+  ["Écrivez la requête qui affiche le nombre de commandes par client, uniquement pour ceux qui en ont plus de 3.", "SELECT client, COUNT(*) … JOIN … GROUP BY client HAVING COUNT(*) > 3."],
+  ["Expliquez ce que fait cette méthode, ligne par ligne. (ta réalisation)", "Révise ton propre code : rôle de chaque variable, conditions, retour, cas d'erreur."],
+  ["Quelle est la différence entre une classe abstraite et une interface ? En avez-vous utilisé ?", "Abstraite : peut contenir du code commun, ne s'instancie pas, héritage simple. Interface : contrat de méthodes, une classe peut en implémenter plusieurs. Exemple dans ton code."],
+  ["Comment avez-vous testé votre application ?", "Tests unitaires (PHPUnit, JUnit…), tests fonctionnels, jeux d'essai, cas limites, non-régression ; montrer un test qui passe."],
+  ["Comment travaillez-vous avec Git ? Montrez-moi votre historique.", "Dépôt distant, branches par fonctionnalité, commits réguliers avec messages clairs, fusion, résolution de conflits."],
+  ["Un utilisateur peut-il voir les données d'un autre en changeant l'identifiant dans l'URL ?", "Contrôle d'accès côté serveur : vérifier que l'objet appartient à l'utilisateur connecté (WHERE id = ? AND idUser = ?), sinon 403."],
+  ["Comment protégez-vous votre application contre les failles XSS ?", "Échappement à l'affichage (htmlspecialchars, moteur de templates), validation des entrées, cookies HttpOnly, en-tête Content-Security-Policy."],
+  ["Présentez votre modèle de données. Pourquoi cette table d'association ?", "MCD/MLD, cardinalités, clés primaires et étrangères, justification des associations plusieurs-à-plusieurs."],
+  ["Votre API renvoie quels codes HTTP et dans quels cas ?", "200, 201, 204, 400, 401, 403, 404, 500 avec un exemple pour chacun ; 401 ≠ 403."],
+  ["Comment déployez-vous votre application en production ?", "Serveur (Apache/Nginx, PHP, base), récupération depuis Git, variables d'environnement pour les secrets (pas dans le code), HTTPS, sauvegarde de la base."],
+  ["Qu'est-ce que vous amélioreriez si vous aviez plus de temps ?", "Recul critique : tests manquants, sécurité, ergonomie, performances, documentation."]
+],
+anglais: [
+  ["Introduce yourself and your training.", "Name, BTS SIO, option (SISR / SLAM), internship company, main tasks, future plans. Use past tense for the internship."],
+  ["Describe a task you carried out during your internship.", "Context (the company), what you did (past simple), tools, the result, what you learnt."],
+  ["What is cybersecurity and why is it important for companies?", "Protecting systems and data; examples: ransomware, phishing, data breaches; consequences (money, reputation, GDPR fines)."],
+  ["Explain what a firewall does, in simple words.", "It filters network traffic: it allows or blocks connections according to rules (source, destination, port)."],
+  ["Do you think artificial intelligence will replace IT technicians?", "Give your opinion (In my opinion…), one argument for, one against (However…), a nuanced conclusion with an example."],
+  ["What would you do if a customer called you because his computer was very slow?", "Conditional: I would ask… I would check… (task manager, disk space, updates, malware scan) … then I would explain the solution."],
+  ["Present the document you have just read: source, topic, main ideas.", "The document is an article from… published in… It deals with… The main idea is… The author also points out that…"],
+  ["What are the advantages and drawbacks of remote work for IT teams?", "Advantages: flexibility, no commuting. Drawbacks: isolation, security risks (home network, VPN needed). Conclude with your view."],
+  ["Explain the difference between hardware and software, with examples.", "Hardware: physical parts (CPU, hard drive, switch). Software: programs (operating system, applications)."],
+  ["What is the difference between a virus and ransomware? Explain it to a non-technical colleague.", "Use simple words: a virus spreads and damages files; ransomware encrypts files and asks for money. Give one way to protect yourself (backups, updates, don't click unknown links)."],
+  ["Describe your typical day during your internship.", "Past simple + time markers: In the morning I usually checked the tickets, then I… In the afternoon… Finish with what you learnt."],
+  ["Your manager asks you to explain why backups are important. What do you say?", "Lost data, ransomware, hardware failure; the 3-2-1 rule (three copies, two media, one off-site); test the restoration."],
+  ["What do you think about working from home in IT jobs?", "Opinion + nuance: flexibility and focus / isolation and security risks (VPN, MFA). Conclude with your preference."],
+  ["Explain a project you are proud of.", "Context, your role, the tools, a problem you solved, the result. Use the past simple and the present perfect (I have learnt…)."],
+  ["Should companies use artificial intelligence for customer support?", "Advantages (24/7, faster) and limits (complex cases, data protection, human contact). Give your opinion with an example."],
+  ["How would you explain what a firewall is to a child?", "Use an image: a guard at the door who checks who can come in and out, following a list of rules."],
+  ["What skills are important to work in IT, in your opinion?", "Technical skills (networks, programming, security) and soft skills (communication, teamwork, curiosity, English). Give an example from your training."],
+  ["Where do you see yourself in five years?", "Future: I would like to… / I plan to… (bachelor, job, specialisation). Link with your BTS option."]
+]
+};
