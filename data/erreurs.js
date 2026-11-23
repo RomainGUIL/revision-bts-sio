@@ -1,6 +1,6 @@
 /* ERREURS FRÉQUENTES PAR MATIÈRE — écrites à la main.
    ERREURS[matière] = [ [l'erreur, pourquoi c'est un problème et quoi faire, exemple « faux → juste », source] ]
-   source : "correcteurs" = constat publié par des correcteurs ou une académie (voir LISEZMOI) ; "" = erreur classique relevée dans les corrigés et les méthodes.
+   source : "correcteurs" = constat publié par des correcteurs ou une académie (voir POUR_RELECTURE.md) ; "" = erreur classique relevée dans les corrigés et les méthodes.
    Aucun rapport de jury national n'est publié pour l'E7 : ces listes ne prétendent pas être officielles. */
 window.ERREURS = {
 cyber: [
