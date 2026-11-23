@@ -122,6 +122,37 @@ test('Oral duel alternates roles and scores each answer out of 20',()=>{
  const fin=T.V.duel(); assert(fin.includes('Alice remporte le duel'),fin.slice(0,300)); assert(fin.includes('18 / 20') && fin.includes('17 / 20') && fin.includes('10 / 20') && fin.includes('8 / 20'));
  T.ACT.dquit(); assert(T.V.duel().includes('Commencer le duel'));
 });
+test('Personal content with HTML or script is always displayed as text (no XSS) on every page',()=>{
+ const P='"><img src=x onerror=alert(1)><script>alert(2)</script>', bad=/<img src=x|<script>alert/;
+ const s=T.blank();
+ s.ctrl=[{id:'x1',titre:P,mat:'cyber',date:'',consignes:P,texte:P,fs:{ok:0,ko:0},dossiers:[
+  {n:1,d:1,type:'',fiche:'# '+P+'\n- '+P+' **'+P+'**',cards:[1,2,3,4].map(i=>({q:P+i,r:P+i,explication:P,exemple:P,piege:P})),qs:[{q:P,motscles:[P],correction:P}]},
+  {n:2,d:1,type:'bts',fiche:'# '+P+'\n'+P,cards:[],qs:[{q:P,motscles:['x'],correction:P,dossier:P,points:5}]}]}];
+ s.quiz=[{id:'z1',titre:P,qs:[{q:P,opts:[P+'a',P+'b','',''],ok:0,ex:P,lim:0}]}];
+ s.reals=[{id:'r1',titre:P,ep:'E5',contexte:P}]; s.memo={dicp:P};
+ const q0=T.QUESTIONS[0].id; s.answers={[q0]:[{d:1,rep:P,auto:0,note:0}]}; s.qdone={[q0]:0};
+ s.history=[{date:1,titre:P,n:1,note:5}]; s.examHist=[{date:1,sid:q0.split('#')[0],titre:P,note:5,temps:1,n:1}];
+ T.setState(T.readState(JSON.parse(JSON.stringify(s))));
+ const routes=Object.keys(T.V).filter(r=>r!=='matiere').map(r=>[r]).concat([['controles','x1'],['quiz','z1'],['realisations','r1'],['chrono','quiz','z1'],['chrono','ctrl','x1'],['flash','ctrl','x1'],['matiere','cyber'],['notion','dicp']]);
+ const check=(label,html)=>assert(!bad.test(String(html)),'code injecté visible sur '+label);
+ for (const [r,a,b] of routes) check(r+'/'+(a||''),T.V[r](a,b));
+ for (const [r,a] of [['controles','x1'],['quiz','z1'],['realisations','r1'],['suivi']]) assert(T.V[r](a).includes('&lt;img src=x'),'le texte piégé doit être affiché, neutralisé, sur '+r);
+ elements.get('#search').value='img'; check('recherche',T.V.recherche());
+ T.ACT.kexam({dataset:{sid:'K_x1#2'}}); check('examen BTS',T.V.examen());
+ T.ACT.kquiz({dataset:{id:'x1'}}); check('cas contrôle',T.V.cas());
+ T.V.duel.o={a:P,b:P+'2',mat:'e5',tours:2,dur:60}; T.ACT.drevanche(); check('duel',T.V.duel()); T.ACT.dgo(); check('duel question',T.V.duel());
+ elements.get('#search').value=''; T.setState(T.blank()); T.resetTransient();
+});
+test('Search finds notions, sigles, oral questions and personal quizzes, ignoring accents and case',()=>{
+ const s=T.blank(); s.quiz=[{id:'zq',titre:'Mon quiz routage',qs:[{q:'Que fait OSPF ?',opts:['Routage dynamique','Chiffrement','',''],ok:0,ex:'',lim:0}]}]; T.setState(T.readState(s));
+ const run=q=>{ elements.get('#search').value=q; return T.V.recherche(); };
+ let h=run('dhcp'); assert(/Notions/.test(h) && /Sigles/.test(h) && /résultat/.test(h),'dhcp');
+ h=run('OSPF'); assert(h.includes('#quiz/zq') && h.includes('Mon quiz routage'),'quiz perso');
+ h=run('portfolio'); assert(h.includes('>Oral<'),'questions d\'oral');
+ assert.equal(run('securite').match(/(\d+) résultat/)[1], run('SÉCURITÉ').match(/(\d+) résultat/)[1],'accents et majuscules');
+ assert(run('x').includes('au moins deux caractères')); assert(run('zzqqxxyy').includes('Aucun résultat'));
+ elements.get('#search').value=''; T.setState(T.blank()); T.resetTransient();
+});
 test('Custom quizzes are validated, imported from AI text and saved',()=>{
  const qs=T.parseQuiz('{"questions":[{"q":"Port DHCP serveur ?","reponses":["67","68","53","80"],"bonne":0},{"q":"Bail illimité ?","reponses":["Vrai","Faux"],"bonne":"Faux"},{"q":"","reponses":["a","b"]}]}');
  assert.equal(qs.length,2); assert.equal(qs[1].ok,1); assert.deepEqual(qs[1].opts,['Vrai','Faux','','']);

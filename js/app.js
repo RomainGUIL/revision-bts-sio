@@ -1570,12 +1570,15 @@ V.quiz = function (id) {
    Messages animateur → joueur : { t:'ok' } { t:'err', msg } { t:'q', i, n, q, opts, lim, rep } { t:'r', … } { t:'end', … } { t:'bye' }
    Un joueur garde son id (sessionStorage) : après une mise en veille ou un rechargement, il retrouve sa place et ses points.
    Seuls des pseudos circulent (pas de nom réel). mp = état de la partie (animateur : host = true ; joueur : host = false). */
+/* SUPA_SRI : empreinte d'intégrité de ce fichier précis ; si le fichier servi par le CDN était modifié, le navigateur refuserait de l'exécuter.
+   En cas de changement de version, recalculer l'empreinte (sha384, base64). */
+var SUPA_SRI = 'sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o';
 var SUPA_SRC = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js', MP_PREFIX = 'btssio-kq-', MP_MAX = 60;
 var mp = null, supaClient = null;
 function mpConfigOK() { var c = window.MULTI || {}; return /^https:\/\/[\w-]+\.supabase\.co\/?$/.test(c.url || '') && String(c.cle || '').length > 20; }
 function supaLib(cb) {
   if (window.supabase && window.supabase.createClient) { cb(); return; }
-  var s = document.createElement('script'); s.src = SUPA_SRC; s.crossOrigin = 'anonymous';
+  var s = document.createElement('script'); s.src = SUPA_SRC; s.integrity = SUPA_SRI; s.crossOrigin = 'anonymous'; s.referrerPolicy = 'no-referrer';
   s.onload = function () { cb(window.supabase && window.supabase.createClient ? null : new Error('Bibliothèque Supabase introuvable.')); };
   s.onerror = function () { s.remove(); cb(new Error('Impossible de charger le module de jeu à plusieurs : il faut être connecté à Internet.')); };
   document.head.appendChild(s);

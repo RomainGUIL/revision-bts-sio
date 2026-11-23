@@ -78,6 +78,15 @@ En ouvrant `index.html` directement, les PDF et audios sont simplement lus dans 
 | `sw.js` | Cache isolé par périmètre de l'application |
 | `POUR_RELECTURE.md` | Bilan de l'audit et limites restantes |
 
+### Sécurité
+
+- **Contenus personnels** (contrôles, dossiers de l'IA, quiz, réalisations, notes, pseudos des parties, fichiers importés) : toujours affichés comme du texte. Un test injecte du code HTML et JavaScript dans tous ces champs et vérifie, sur toutes les pages, qu'il n'est jamais interprété.
+- **Imports** (sauvegarde, contrôle ou quiz partagé, réponse d'une IA) : structure et types vérifiés avant tout enregistrement ; clés dangereuses (`__proto__`…) refusées.
+- **Politique de sécurité du contenu (CSP)** dans `index.html` : scripts de l'application et bibliothèque Supabase seulement, connexions vers Supabase seulement, aucun objet ni formulaire externe.
+- **Bibliothèque Supabase** chargée avec une empreinte d'intégrité (SRI) : un fichier modifié sur le CDN serait refusé.
+- **Liens externes** ouverts avec `noopener`.
+- **Limite du jeu à plusieurs** : les canaux Supabase sont publics et sans compte. Une personne qui connaît le code d'une partie peut y envoyer de faux messages (par exemple se faire passer pour l'animateur). C'est acceptable pour un quiz entre élèves ; aucune donnée n'est enregistrée et seuls des pseudos circulent. Le projet Supabase n'a aucune table.
+
 Les textes d'énoncés et corrections sont échappés. Les documents des cas sont du HTML de confiance livré avec l'application. Les cours HTML importés sont convertis en texte dans un document inerte.
 
 ### Vérifications

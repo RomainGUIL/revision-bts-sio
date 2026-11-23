@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Politique de sécurité : scripts de l'application et bibliothèque Supabase (jeu à plusieurs) seulement ; connexions vers Supabase seulement ;
+     aucun objet ni formulaire externe. Les styles en ligne sont autorisés (mise en page générée par l'application).
+     « file: » permet d'ouvrir index.html directement depuis le disque, sans serveur. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' file: https://cdn.jsdelivr.net; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data:; media-src 'self' file:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'self' file:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Révision BTS SIO</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/study.css">

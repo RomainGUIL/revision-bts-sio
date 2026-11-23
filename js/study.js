@@ -137,12 +137,14 @@ function install(E) {
     s.reals.forEach(function (r) { add('Réalisations',r.titre,Object.keys(r).map(function (k) { return r[k]; }).join(' '),'#realisations/' + r.id); });
     E.questions().forEach(function (x) { add('Questions',x.num + ' — ' + E.subjectLabel(E.subjects[x.sujet]),x.texte,'#question/' + encodeURIComponent(x.id)); });
     (window.GLOSSAIRE || []).forEach(function (g) { add('Sigles',g[0] + ' — ' + g[1],g[2],'#glossaire'); });
+    (s.quiz || []).forEach(function (z) { add('Mes quiz', z.titre || 'Quiz sans titre', z.qs.map(function (x) { return x.q + ' ' + x.opts.join(' ') + ' ' + x.ex; }).join(' '), '#quiz/' + z.id); });
+    Object.keys(window.ORAL || {}).forEach(function (m) { if (E.matOK(m)) ORAL[m].forEach(function (x) { add('Oral', x[0], x[1], '#oral'); }); });
     return out;
   }
   V.recherche = function () {
     var q = $('#search').value, results = searchResults(q), filtered = results.filter(function (r) { return searchFilter === 'all' || r.type === searchFilter; });
-    var categories = ['all','Notions','Apprises','Notes','Contrôles','Réalisations','Questions','Sigles'];
-    return E.pageHead('Rechercher dans mes révisions', 'Cours, notions apprises, notes, questions, contrôles et réalisations.') + '<div class="chips">' + categories.map(function (c) { return '<button class="chip' + (searchFilter === c ? ' on' : '') + '" data-a="searchFilter" data-v="' + c + '">' + (c === 'all' ? 'Tout' : c) + '</button>'; }).join('') + '</div>' +
+    var categories = ['all','Notions','Apprises','Notes','Contrôles','Mes quiz','Réalisations','Questions','Oral','Sigles'];
+    return E.pageHead('Rechercher dans mes révisions', 'Cours, notions apprises, notes, questions d\'examen et d\'oral, sigles, contrôles, quiz et réalisations.') + '<div class="chips">' + categories.map(function (c) { return '<button class="chip' + (searchFilter === c ? ' on' : '') + '" data-a="searchFilter" data-v="' + c + '">' + (c === 'all' ? 'Tout' : c) + '</button>'; }).join('') + '</div>' +
       (q.trim().length < 2 ? '<div class="card">Écris au moins deux caractères dans la recherche en haut de page.</div>' : '<p class="muted" role="status">' + filtered.length + ' résultat(s) pour « ' + esc(q) + ' »' + (filtered.length > 60 ? ' · 60 premiers affichés, précise ta recherche.' : '') + '</p>' + filtered.slice(0,60).map(function (r) { var i = E.norm(r.body).indexOf(E.norm(q)), start = Math.max(0,i-60); return '<article class="card search-result"><span class="tag">' + r.type + '</span><h2><a href="' + r.href + '">' + esc(r.title) + '</a></h2><p>' + (start ? '…' : '') + esc(r.body.slice(start,start+260)) + (r.body.length > start+260 ? '…' : '') + '</p></article>'; }).join('') + (!filtered.length ? '<div class="card">Aucun résultat. Essaie un autre mot ou le filtre « Tout ».</div>' : ''));
   };
   function scopeURL() { return new URL('./', location.href).href; }
