@@ -18,7 +18,7 @@ for (const [,src] of html.matchAll(/<script src="(.*?)"/g)) {
  let code=fs.readFileSync(path.join(root,src),'utf8');
  if(src==='js/app.js') {
    code=code.slice(0,code.lastIndexOf('fixSel(); applyTheme(); render();')) + `
-   window.T = { study, blank, readState, getState:()=>S, setState:(v)=>{S=v;buildCtrl();refreshThemeStats();}, save, buildCtrl, CTRLQ:()=>CTRLQ, CTRLC:()=>CTRLC, SUJETS, QUESTIONS, NOT, THEME_STATS, fsrsReview, deckStats, deckDue, autoScore, daysUntil, joursAvant, parseDossier, ctrlImport, ACT, V, examRendre, setResult:(v)=>{examRes=v;}, getResult:()=>examRes, render, getSession:()=>session, resetTransient };
+   window.T = { study, blank, readState, getState:()=>S, setState:(v)=>{S=v;buildCtrl();refreshThemeStats();}, save, buildCtrl, CTRLQ:()=>CTRLQ, CTRLC:()=>CTRLC, SUJETS, QUESTIONS, NOT, THEME_STATS, fsrsReview, deckStats, deckDue, autoScore, daysUntil, parseDossier, parseQuiz, repairJson, quizQ, ctrlImport, ACT, V, examRendre, setResult:(v)=>{examRes=v;}, getResult:()=>examRes, render, getSession:()=>session, resetTransient };
    })();`;
  }
  vm.runInContext(code,ctx,{filename:src});
@@ -54,6 +54,40 @@ test('AI dossiers accept keyword text and reject malformed arrays',()=>{
  const d=T.parseDossier('```json\n'+JSON.stringify({questions:[{q:'DNS ?',motscles:'dns;nom|domaine',correction:'OK'}]})+'\n```');
  assert.equal(d.qs[0].motscles.length,2); assert.throws(()=>T.parseDossier('{"questions":{}}'));
 });
+test('AI answers copied as formatted ChatGPT text are repaired',()=>{
+ const mangled='Voici :\n{\\\n&#x20; "fiche": "# VLSM\\n- \\*\\*masque\\*\\* variable",\\\n&#x20; "flashcards": [{"q": "/26 ?", "r": "255.255.255.192"},],\\\n&#x20; "questions": [{"q": "Découper “192.168.1.0/24”", "motscles": ["masque"], "correction": "Ligne 1\nLigne 2"}]\\\n}';
+ const d=T.parseDossier(mangled); assert.equal(d.cards.length,1); assert.equal(d.qs[0].correction,'Ligne 1\nLigne 2'); assert(d.fiche.includes('**masque**'));
+ assert.throws(()=>T.parseDossier('{"fiche":"Joins ton cours.","flashcards":[],"questions":[]}'),/aucune flashcard/);
+ assert.equal(T.parseDossier('{"fiche":" ","flashcards":[],"questions":[]}',true).qs.length,0);
+});
+test('BTS-style subject becomes a dossier with its context and scored questions',()=>{
+ const d=T.parseDossier(JSON.stringify({sujet:{titre:'Clinique Azur',contexte:'Une clinique de 80 salariés.',documents:[{titre:'Document 1 : réseau',contenu:'VLAN 10, 20'}]},questions:[{dossier:'Dossier 1 – Réseau',q:'Proposer un plan d\'adressage',points:4,motscles:['vlan'],correction:'…'}]}));
+ assert.equal(d.type,'bts'); assert.equal(d.qs[0].dossier,'Dossier 1 – Réseau'); assert(d.fiche.startsWith('# Clinique Azur')); assert(d.fiche.includes('# Document 1 : réseau')); assert(d.qs[0].q.endsWith('(4 points)'));
+ const s=T.blank(); s.ctrl=[{id:'b1',titre:'Réseau',mat:'sisr',date:'',consignes:'',texte:'',dossiers:[Object.assign({n:1,d:1},d)]}];
+ T.setState(T.readState(s)); const q=Object.values(T.CTRLQ())[0]; assert.equal(q.sujetTxt,d.fiche); assert.equal(q.num,'1'); assert.equal(q.dossier,'Dossier 1 – Réseau');
+ T.ACT.kquiz({dataset:{id:'b1'}}); assert.equal(T.getSession().items.length,1); assert(T.V.cas().includes('Clinique Azur'));
+ s.ctrl[0].dossiers[0].type='autre'; assert.throws(()=>T.readState(s)); T.setState(T.blank()); T.resetTransient();
+});
+test('BTS-style subject runs as a timed mock exam with a weighted score',()=>{
+ const d=T.parseDossier(JSON.stringify({sujet:{titre:'Clinique Azur',contexte:'Contexte',documents:[]},questions:[{q:'Segmenter',points:15,motscles:['vlan'],correction:'VLAN'},{q:'Sauvegarder',points:5,motscles:['sauvegarde'],correction:'3-2-1'}]}));
+ assert.deepEqual(d.qs.map(q=>q.points),[15,5]);
+ const s=T.blank(); s.ctrl=[{id:'b1',titre:'Réseau',mat:'sisr',date:'',consignes:'',texte:'',dossiers:[Object.assign({n:2,d:1},d)]}];
+ T.setState(T.readState(s)); assert(T.SUJETS['K_b1#2'].bts); assert(T.V.examen().includes('Mes sujets type BTS'));
+ T.ACT.kexam({dataset:{sid:'K_b1#2'}}); assert(T.V.examen().includes('selected>Sujet type BTS — Clinique Azur'));
+ const run={sid:'K_b1#2',start:Date.now(),dur:14400000,reps:{'k_b1_2_q0':'On crée des VLAN.','k_b1_2_q1':''},i:0,page:0,doc:''};
+ T.getState().examRun=run; assert(T.V.examen().includes('Contexte')); assert(T.readState(JSON.parse(JSON.stringify(T.getState()))).examRun);
+ T.examRendre(); const h=T.getState().examHist.at(-1); assert.equal(h.note,15); assert.equal(h.titre,'Sujet type BTS — Clinique Azur'); assert(T.V.examen().includes('15 / 15 points'));
+ const bad=JSON.parse(JSON.stringify(T.getState())); bad.examRun=Object.assign({},run,{sid:'K_b1#9'}); assert.throws(()=>T.readState(bad));
+ T.getState().examRun=Object.assign({},run); T.setState(Object.assign(T.blank(),{examRun:T.getState().examRun})); T.setResult(null); assert(!T.V.examen().includes('Examen blanc —')); assert.equal(T.getState().examRun,null);
+ T.setState(T.blank()); T.resetTransient();
+});
+test('Custom quizzes are validated, imported from AI text and saved',()=>{
+ const qs=T.parseQuiz('{"questions":[{"q":"Port DHCP serveur ?","reponses":["67","68","53","80"],"bonne":0},{"q":"Bail illimité ?","reponses":["Vrai","Faux"],"bonne":"Faux"},{"q":"","reponses":["a","b"]}]}');
+ assert.equal(qs.length,2); assert.equal(qs[1].ok,1); assert.deepEqual(qs[1].opts,['Vrai','Faux','','']);
+ const s=T.blank(); s.quiz=[{id:'z1',titre:'DHCP',qs}]; assert.equal(T.readState(s).quiz[0].qs.length,2);
+ for (const bad of [{ok:7},{opts:['a']},{lim:45}]) { const b=T.blank(); b.quiz=[{id:'z1',titre:'x',qs:[Object.assign(T.quizQ({q:'q',reponses:['a','b']}),bad)]}]; assert.throws(()=>T.readState(b)); }
+ const b=T.blank(); b.kbest={'quiz/z1':'beaucoup'}; assert.throws(()=>T.readState(b));
+});
 test('Malformed shared control cannot mutate current progress',()=>{
  const before=JSON.stringify(T.getState());
  assert.throws(()=>T.ctrlImport(JSON.stringify({type:'bts-sio-controle',controle:{titre:'Test',dossiers:[{qs:[{q:'x',motscles:{bad:true}}]}]}})));
@@ -67,7 +101,7 @@ test('Due mature cards are counted as due and offered for review',()=>{
 });
 test('Local calendar countdown is zero today and negative after the exam',()=>{
  const d=new Date(),fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
- assert.equal(T.daysUntil(fmt(d)),0);assert.equal(T.joursAvant(fmt(d)),0);d.setDate(d.getDate()-1);assert.equal(T.daysUntil(fmt(d)),-1);
+ assert.equal(T.daysUntil(fmt(d)),0);d.setDate(d.getDate()-1);assert.equal(T.daysUntil(fmt(d)),-1);
 });
 test('Cyber frequencies respect the chosen option',()=>{
  const id=Object.keys(ctx.THEMES).find(id=>ctx.THEMES[id][1]==='cyber'&&!T.THEME_STATS[id].est);
@@ -88,7 +122,8 @@ test('Reset clears active sessions and all derived control data',()=>{T.ACT.rese
 test('All base routes render for both options',()=>{for(const option of ['SISR','SLAM']){const s=T.blank();s.option=option;T.setState(s);for(const [route,view] of Object.entries(T.V)){if(route==='matiere')continue;assert.equal(typeof view(),'string',route);}}T.setState(T.blank());T.resetTransient();});
 test('Service worker only deletes old caches from its own scope',()=>{
  const handlers={},deleted=[];let pending;
- const sw={self:{registration:{scope:'https://example.org/app/'},addEventListener:(n,f)=>handlers[n]=f,clients:{claim:()=>Promise.resolve()},skipWaiting:()=>Promise.resolve()},caches:{open:async()=>({keys:async()=>[]}),keys:()=>Promise.resolve(['unrelated','bts-sio:https://example.org/other/:v19','bts-sio:https://example.org/app/:v19','bts-sio:https://example.org/app/:v21']),delete:k=>{deleted.push(k);return Promise.resolve(true);}},URL};
+ const current=/VERSION = PREFIX \+ '(v\d+)'/.exec(fs.readFileSync(path.join(root,'sw.js'),'utf8'))[1];
+ const sw={self:{registration:{scope:'https://example.org/app/'},addEventListener:(n,f)=>handlers[n]=f,clients:{claim:()=>Promise.resolve()},skipWaiting:()=>Promise.resolve()},caches:{open:async()=>({keys:async()=>[]}),keys:()=>Promise.resolve(['unrelated','bts-sio:https://example.org/other/:v19','bts-sio:https://example.org/app/:v19','bts-sio:https://example.org/app/:'+current]),delete:k=>{deleted.push(k);return Promise.resolve(true);}},URL};
  vm.runInNewContext(fs.readFileSync(path.join(root,'sw.js'),'utf8'),sw);handlers.activate({waitUntil:p=>pending=p});
  globalThis.swCheck=pending.then(()=>assert.deepEqual(deleted,['bts-sio:https://example.org/app/:v19']));
 });
@@ -102,7 +137,7 @@ async function browserTests(){
  const url=require('node:url').pathToFileURL(path.join(root,'index.html')).href;
  const go=async route=>{await page.goto(url+'#'+route);await page.waitForTimeout(30);};
  await go('accueil');
- const routes=Object.keys(T.V).filter(r=>r!=='matiere').concat(['matiere/cyber','flash/deck/all','qcm/E7','biblio/theme/auth','realisations/nouvelle']);
+ const routes=Object.keys(T.V).filter(r=>r!=='matiere').concat(['matiere/cyber','flash/deck/all','chrono/E7','quiz','biblio/theme/auth','realisations/nouvelle']);
  // Unknown theme links must also fail gracefully.
  for(const option of ['SISR','SLAM']) {
   await page.selectOption('#optSel',option);

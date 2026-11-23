@@ -93,12 +93,12 @@ function install(E) {
   function home() {
     var t = resumeTarget();
     return (t ? '<section class="card resume-card"><div><p class="eyebrow">EN COURS</p><b>' + esc(t.label) + '</b><p class="small muted">Tes réponses et ta place sont conservées sur cet appareil.</p></div><button class="btn" data-a="resume">Reprendre où j’en étais →</button></section>' : '') +
-      '<div class="study-shortcuts"><a class="card tile" href="#seance"><b>Une séance guidée</b><span>15 ou 30 minutes, un parcours en 3 étapes</span></a><a class="card tile" href="#ecoute"><b>Comprendre l’anglais</b><span>4 écoutes avec transcription et correction</span></a></div>';
+      '<div class="study-shortcuts"><a class="card tile" href="#seance"><b>Une séance guidée</b><span>10, 15 ou 30 minutes, un parcours en 3 étapes</span></a><a class="card tile" href="#ecoute"><b>Comprendre l’anglais</b><span>4 écoutes avec transcription et correction</span></a></div>';
   }
   V.seance = function () {
     var g = state().guide;
-    var head = E.pageHead('Ma séance guidée', 'Des cartes, des questions ciblées, puis une écoute en anglais. 15 ou 30 minutes sont une durée indicative : prends le temps de comprendre.');
-    if (!g) return head + '<div class="cols"><div class="card"><h2>Un petit pas · 15 minutes</h2><p>5 cartes, 2 questions et une écoute.</p><button class="btn" data-a="guideStart" data-v="15">Commencer 15 minutes</button></div><div class="card"><h2>Un travail approfondi · 30 minutes</h2><p>10 cartes, 4 questions et une écoute.</p><button class="btn" data-a="guideStart" data-v="30">Commencer 30 minutes</button></div></div>';
+    var head = E.pageHead('Ma séance guidée', 'Un parcours court en trois étapes : des cartes, des questions ciblées, puis une question d’oral (express) ou une écoute en anglais. Les durées sont indicatives : prends le temps de comprendre.');
+    if (!g) return head + '<div class="cols"><div class="card"><h2>Express · 10 minutes</h2><p>5 cartes, 2 questions et une question d’oral.</p><a class="btn" href="#express">Commencer 10 minutes</a></div><div class="card"><h2>Un petit pas · 15 minutes</h2><p>5 cartes, 2 questions et une écoute.</p><button class="btn" data-a="guideStart" data-v="15">Commencer 15 minutes</button></div><div class="card"><h2>Un travail approfondi · 30 minutes</h2><p>10 cartes, 4 questions et une écoute.</p><button class="btn" data-a="guideStart" data-v="30">Commencer 30 minutes</button></div></div>';
     var steps = [['Mémoriser',g.cards.length + ' cartes, puis passage à la suite'],['Comprendre',g.questions.length + ' questions, erreurs prioritaires'],['Écouter',lesson(g.audio).title]];
     return head + (g.step === 3 ? '<div class="verdict good"><b>Séance terminée !</b><p>' + g.cardsDone + ' cartes travaillées, ' + g.questions.length + ' questions et une écoute.</p><a class="btn" href="#erreurs">Ce que je dois encore revoir</a></div>' : '') +
       '<ol class="guided-steps">' + steps.map(function (x, i) { return '<li class="card' + (g.step === i ? ' current' : '') + '"><span class="step-number">' + (g.step > i ? '✓' : i + 1) + '</span><div><b>' + x[0] + '</b><p class="muted small">' + esc(x[1]) + '</p></div><span class="tag">' + (g.step > i ? 'Terminé' : g.step === i ? 'En cours' : 'À venir') + '</span></li>'; }).join('') + '</ol>' +
@@ -221,7 +221,7 @@ function install(E) {
   function afterRender(route) {
     var path = location.hash || '#accueil', s = state(), values = s.forms[path];
     if (values) Object.keys(values).forEach(function (id) { var el = document.getElementById(id); if (el) el.value = values[id]; });
-    var active = ['cas','flash','examen','oral','qcm','exos','python','ecoute'].indexOf(route)>=0;
+    var active = ['cas','flash','examen','oral','chrono','exos','python','ecoute'].indexOf(route)>=0;
     document.body.classList.toggle('focus-mode',s.focus && active);
     if (active) {
       var bar = document.createElement('div'); bar.className = 'study-toolbar';

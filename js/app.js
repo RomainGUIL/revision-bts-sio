@@ -31,9 +31,10 @@ var STORE_KEY = 'bts-sio-revision-v1';
    S.ostats  : { matière: { n, sum } } — auto-évaluations du simulateur d'oral ; S.day : compteurs du jour (objectif du jour)
    S.ia      : 'chatgpt' ou 'claude' — IA ouverte par les boutons « Demander à l'IA »
    S.examRun : examen blanc en cours { sid, start, dur, reps, i, page, doc } ; S.examHist : examens blancs terminés
+   S.quiz    : mes quiz [ { id, titre, qs: [ { q, opts: [4 textes, vides si non utilisés], ok: n° de la bonne, ex: explication, lim: secondes ou 0 = temps de la partie } ] } ] ; S.kbest : records du quiz chrono
    S.ctrl    : mes contrôles [ { id, titre, mat, date, consignes, texte, dossiers: [ { n, d, fiche, cards, qs } ], fs: { ok, ko } } ] */
 function blank() { return { theme: 'light', option: '', ep: 'E7', mat: 'cyber', learned: {}, cards: {}, history: [], qdone: {}, answers: {}, exam: '', fstats: {}, tpdone: {}, layout: 'bas', zoom: '',
-  fhist: {}, ostats: {}, day: {}, ia: 'chatgpt', examRun: null, examHist: [], ctrl: [], exstats: {}, days: {}, memo: {}, reals: [], planDone: {}, lastBackup: 0, study: StudyTools.blank() }; }
+  fhist: {}, ostats: {}, day: {}, ia: 'chatgpt', examRun: null, examHist: [], ctrl: [], exstats: {}, days: {}, memo: {}, reals: [], planDone: {}, kbest: {}, quiz: [], lastBackup: 0, study: StudyTools.blank() }; }
 var S = blank();
 var loadError = false;
 try { S = readState(JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); } catch (e) { loadError = true; }
@@ -73,6 +74,12 @@ function readState(data) {
   map(out.ostats, function (v) { return object(v) && finite(v.n) && finite(v.sum) && v.sum <= v.n; });
   map(out.exstats, function (v) { return object(v) && finite(v.n) && finite(v.ok) && v.ok <= v.n; });
   map(out.planDone, function (v) { return v === 1 || v === true; });
+  map(out.kbest, finite);
+  var zids = {};
+  out.quiz.forEach(function (z) {
+    check(object(z) && text(z.id) && /^[a-zA-Z0-9_-]+$/.test(z.id) && !zids[z.id] && text(z.titre) && Array.isArray(z.qs)); zids[z.id] = true;
+    z.qs.forEach(function (x) { check(object(x) && text(x.q) && Array.isArray(x.opts) && x.opts.length === 4 && x.opts.every(text) && Number.isInteger(x.ok) && x.ok >= 0 && x.ok < 4 && text(x.ex) && [0, 10, 20, 30, 60].indexOf(x.lim) >= 0); });
+  });
   Object.keys(out.day).forEach(function (k) { check(k === 'd' ? text(out.day[k]) : finite(out.day[k])); });
   out.history.concat(out.examHist).forEach(function (h) { check(object(h) && finite(h.date) && text(h.titre) && finite(h.note) && h.note <= 20 && finite(h.n)); });
   out.examHist.forEach(function (h) { check(text(h.sid) && finite(h.temps)); });
@@ -85,15 +92,16 @@ function readState(data) {
     var nums = {};
     c.dossiers.forEach(function (d) {
       check(object(d) && Number.isInteger(d.n) && d.n > 0 && !nums[d.n]); nums[d.n] = true;
-      check(finite(d.d) && text(d.fiche) && Array.isArray(d.cards) && Array.isArray(d.qs));
+      check(finite(d.d) && text(d.fiche) && Array.isArray(d.cards) && Array.isArray(d.qs) && (d.type == null || d.type === '' || d.type === 'bts'));
       d.cards.forEach(function (x) { check(object(x) && text(x.q) && text(x.r)); ['explication','exemple','piege'].forEach(function (k) { if (x[k] != null) check(text(x[k])); }); });
-      d.qs.forEach(function (x) { check(object(x) && text(x.q) && text(x.correction) && Array.isArray(x.motscles) && x.motscles.every(text)); });
+      d.qs.forEach(function (x) { check(object(x) && text(x.q) && text(x.correction) && Array.isArray(x.motscles) && x.motscles.every(text) && (x.dossier == null || text(x.dossier)) && (x.points == null || finite(x.points) && x.points > 0 && x.points <= 20)); });
     });
   });
   out.reals.forEach(function (r) { check(object(r) && text(r.id) && /^[a-zA-Z0-9_-]+$/.test(r.id) && text(r.titre) && ['E5','E6'].indexOf(r.ep) >= 0 && Object.keys(r).every(function (k) { return text(r[k]); })); });
   if (out.examRun) {
     var r = out.examRun;
-    var qs = ANNALES.questions.concat([].concat.apply([], (window.CAS_ENT || []).map(function (c) { return c.questions.map(function () { return { sujet: c.id }; }); }))).filter(function (q) { return q.sujet === r.sid; });
+    var m = /^K_(.+)#(\d+)$/.exec(r.sid), kc = m && out.ctrl.filter(function (c) { return c.id === m[1]; })[0], kd = kc && kc.dossiers.filter(function (d) { return d.n === +m[2] && d.type === 'bts'; })[0];
+    var qs = m ? (kd ? kd.qs : []) : ANNALES.questions.concat([].concat.apply([], (window.CAS_ENT || []).map(function (c) { return c.questions.map(function () { return { sujet: c.id }; }); }))).filter(function (q) { return q.sujet === r.sid; });
     check(qs.length > 0 && Number.isInteger(r.i) && r.i >= 0 && r.i < qs.length && finite(r.start) && finite(r.dur) && r.dur > 0);
     map(r.reps, text); check(finite(r.page) && text(r.doc));
   }
@@ -107,7 +115,7 @@ function storageWarning(message) {
 var study;
 function save() { if (loadError) return false; if (study) study.capture(); try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); memoBox.pending = false; storageWarning(''); return true; } catch (e) { storageWarning('Enregistrement impossible dans ce navigateur. Exporte ta progression depuis « Réglages et sauvegarde » avant de fermer.'); return false; } }
 function daysUntil(date) { if (!date) return null; var p = date.split('-').map(Number), d = new Date(); return Math.round((Date.UTC(p[0], p[1] - 1, p[2]) - Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) / DAY); }
-function resetTransient() { if (study) study.cancelPending(); session = null; flash = null; oral = null; qcm = null; exo = null; express = null; examRes = null; if (reco) reco.stop(); py = { tab: 'fiche', i: 0, rep: null, done: false, code: {} }; }
+function resetTransient() { if (study) study.cancelPending(); session = null; flash = null; oral = null; kh = null; exo = null; express = null; examRes = null; if (reco) reco.stop(); py = { tab: 'fiche', i: 0, rep: null, done: false, code: {} }; }
 
 function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function dayCount(k) { if (S.day.d !== today()) S.day = { d: today(), flash: 0, q: 0, oral: 0 }; S.day[k] = (S.day[k] || 0) + 1; S.days = S.days || {}; S.days[today()] = (S.days[today()] || 0) + 1; }
@@ -185,9 +193,10 @@ function buildCtrl() {
   (S.ctrl || []).forEach(function (c) {
     SUJETS['K_' + c.id] = { id: 'K_' + c.id, ctrl: c.id, cas: c.titre, annee: 0, docs: {}, option: '' };
     (c.dossiers || []).forEach(function (d) {
+      if (d.type === 'bts') SUJETS['K_' + c.id + '#' + d.n] = { id: 'K_' + c.id + '#' + d.n, ctrl: c.id, bts: true, cas: (d.fiche.split('\n')[0].replace(/^#\s*/, '') || c.titre), fiche: d.fiche, annee: 0, docs: {}, option: '' };
       (d.qs || []).forEach(function (x, i) {
         var id = 'k_' + c.id + '_' + d.n + '_q' + i, mc = (x.motscles || []).map(String);
-        CTRLQ[id] = { id: id, sujet: 'K_' + c.id, ctrl: c.id, num: d.n + '.' + (i + 1), dossier: '', mission: '', page: 0, contexte: '', texte: x.q, docs: [], utiles: [], precis: true,
+        CTRLQ[id] = { id: id, sujet: 'K_' + c.id, ctrl: c.id, num: d.type === 'bts' ? String(i + 1) : d.n + '.' + (i + 1), dossier: typeof x.dossier === 'string' ? x.dossier : '', mission: '', page: 0, contexte: '', texte: x.q, docs: [], utiles: [], precis: true, sujetTxt: d.type === 'bts' ? d.fiche : '', points: d.type === 'bts' && x.points > 0 ? x.points : 0,
           themes: [], mats: [], corr: x.correction || '', mc: mc.map(function (g) { return g.split('|').map(norm); }), mcLabel: mc.map(function (g) { return g.split('|')[0]; }) };
       });
       (d.cards || []).forEach(function (x, i) {
@@ -212,7 +221,7 @@ function sujOK(s) { return s.ctrl ? true : s.ent ? matOK(s.mat) : (s.option === 
 function mesNotions() { return NOT.filter(function (n) { return matOK(n.mat); }); }
 function mesQuestions() { return QUESTIONS.filter(function (q) { return sujOK(SUJETS[q.sujet]); }); }
 function matsOf(ep) { return Object.keys(MATIERES).filter(function (m) { return MATIERES[m][2] === ep && matOK(m); }); }
-function sujetLabel(s) { return s.ctrl ? 'Contrôle — ' + s.cas : s.ent ? 'Entraînement ' + EP_COURT[s.epreuve] + (s.option ? ' ' + s.option : '') + ' — ' + s.cas : (s.option === 'CEJM' ? 'E4 CEJM' : 'E7 ' + s.option) + ' ' + s.annee + (s.autre ? ' (autres BTS)' : '') + ' — ' + s.cas; }
+function sujetLabel(s) { return s.bts ? 'Sujet type BTS — ' + s.cas : s.ctrl ? 'Contrôle — ' + s.cas : s.ent ? 'Entraînement ' + EP_COURT[s.epreuve] + (s.option ? ' ' + s.option : '') + ' — ' + s.cas : (s.option === 'CEJM' ? 'E4 CEJM' : 'E7 ' + s.option) + ' ' + s.annee + (s.autre ? ' (autres BTS)' : '') + ' — ' + s.cas; }
 function sujetKind(s) { return s.ent ? 'mat:' + s.mat : s.option; }   // valeur du filtre « Épreuve » de l'étude de cas
 function sujetsFor(mat) {   // sujets concernés par une matière (dénominateur des fréquences)
   return ANNALES.sujets.filter(function (s) {
@@ -367,7 +376,9 @@ var ICO = {
   examen: 'M12 9v4l3 2 M9 2h6 M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16', oral: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3 M5 11a7 7 0 0 0 14 0 M12 18v3',
   biblio: 'M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2z M22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z', fiches: 'M6 9V3h12v6 M6 18H4v-7h16v7h-2 M6 14h12v7H6z',
   methode: 'M4 20h4L19 9l-4-4L4 16z M14 6l4 4', pronos: 'M3 17l6-6 4 4 8-8 M15 7h6v6', tp: 'M4 5h16v14H4z M7 9l3 3-3 3 M12 15h5',
-  qcm: 'M9 11l3 3 8-8 M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9', exos: 'M4 4h16v16H4z M8 8h3 M8 12h8 M8 16h5 M14 7l2 2-2 2',
+  exos: 'M4 4h16v16H4z M8 8h3 M8 12h8 M8 16h5 M14 7l2 2-2 2',
+  chrono: 'M8 21h8 M12 17v4 M7 4h10v5a5 5 0 0 1-10 0z M17 6h3v1a4 4 0 0 1-4 4 M7 6H4v1a4 4 0 0 0 4 4',
+  quiz: 'M4 6h16 M4 12h9 M4 18h6 M15 17l2 2 4-4',
   matieres: 'M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z',
   realisations: 'M4 4h16v12H4z M8 20h8 M12 16v4 M8 9l2 2 4-4', planning: 'M4 5h16v16H4z M4 9h16 M8 3v4 M16 3v4 M8 13h3 M8 17h3',
   pentest: 'M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5z M9 12l2 2 4-4',
@@ -379,15 +390,15 @@ function epTitre(ep) { return ep !== 'E6' ? EPREUVES[ep][0] : S.option === 'SLAM
 function ico(k) { return '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (ICO[k] || '') + '"/></svg>'; }
 var NAV = [
   ['', [['accueil', 'Tableau de bord'], ['matieres', 'Mes matières'], ['flash', 'Flashcards'], ['cas', 'Étude de cas']]],
-  ['Réviser', [['express', 'Révision express'], ['seance', 'Séance guidée'], ['erreurs', 'Carnet d\'erreurs'], ['controles', 'Mes contrôles']]],
-  ['S\'entraîner', [['examen', 'Examen blanc'], ['oral', 'Simulateur d\'oral'], ['realisations', 'Mes réalisations (E5/E6)'], ['qcm', 'QCM rapide'], ['exos', 'Exercices'], ['ecoute', 'Écouter en anglais']]],
-  ['Cours et fiches', [['biblio', 'Bibliothèque de notions'], ['pentest', 'Tests d\'intrusion (pentest)'], ['python', 'Maths et Python (E3)'], ['erreursfreq', 'Erreurs fréquentes'], ['glossaire', 'Glossaire des sigles'], ['fiches', 'Fiches à imprimer'], ['methode', 'Méthode de rédaction']]],
+  ['Réviser', [['seance', 'Séance guidée'], ['erreurs', 'Carnet d\'erreurs'], ['controles', 'Mes contrôles']]],
+  ['S\'entraîner', [['examen', 'Examen blanc'], ['oral', 'Simulateur d\'oral'], ['realisations', 'Mes réalisations (E5/E6)'], ['chrono', 'Quiz chrono (QCM)'], ['quiz', 'Mes quiz'], ['exos', 'Exercices'], ['ecoute', 'Écouter en anglais']]],
+  ['Cours et fiches', [['biblio', 'Bibliothèque de notions'], ['pentest', 'Tests d\'intrusion (pentest)'], ['python', 'Maths et Python (E3)'], ['erreursfreq', 'Pièges fréquents'], ['glossaire', 'Glossaire des sigles'], ['fiches', 'Fiches à imprimer'], ['methode', 'Méthode de rédaction']]],
   ['Annales et ressources', [['annales', 'Sujets et corrections'], ['pronos', 'Thèmes à réviser'], ['tp', 'TP SISR'], ['relecture', 'Relire les corrections'], ['horsligne', 'Préparer le hors-ligne']]],
   ['Organisation', [['planning', 'Mon planning'], ['notes', 'Mes notes'], ['suivi', 'Réglages et sauvegarde']]]
 ];
 /* Menu repliable (divulgation progressive) : seul le groupe de la page en cours est ouvert, les autres se déplient au clic. */
 var navOpen = {}, curRoute = 'accueil';
-var NAV_ALIAS = { apprises: 'biblio', matiere: 'matieres', notion: 'biblio', question: 'annales' };
+var NAV_ALIAS = { express: 'seance', animer: 'chrono', rejoindre: 'chrono', apprises: 'biblio', matiere: 'matieres', notion: 'biblio', question: 'annales' };
 function groupOf(r) { r = NAV_ALIAS[r] || r; var g = NAV.filter(function (x) { return x[1].some(function (y) { return y[0] === r; }); })[0]; return g ? g[0] : ''; }
 function isNavOpen(g) { return !g || (navOpen[g] != null ? navOpen[g] : groupOf(curRoute) === g); }
 function renderNav() {
@@ -452,7 +463,7 @@ V.cas = function (mode, arg) {
   var it = session.items[session.i], q = it.q, s = SUJETS[q.sujet];
   var nomDoc = function (k) { return k.replace('Doc ', 'Document '); };
   var cur = session.doc || (s.ent ? (q.utiles[0] || 'ctx') : '');
-  var docBtns = s.ctrl ? '' : s.ent
+  var docBtns = s.ctrl ? (q.sujetTxt ? '<button class="btn ghost small" data-a="togglepdf">' + (session.pdf ? 'Masquer le sujet' : 'Afficher le sujet (contexte et documents)') + '</button>' : '') : s.ent
     ? '<button class="btn ghost small' + (cur === 'ctx' ? ' on' : '') + '" data-a="doc" data-k="ctx">Contexte du cas</button>' +
       Object.keys(s.html).map(function (k) { var u = q.utiles.indexOf(k) >= 0; return '<button class="btn small ' + (cur === k ? 'on' : u ? 'need' : 'ghost') + '" data-a="doc" data-k="' + k + '" title="' + (u ? 'Utile pour cette question' : 'Document du cas') + '">' + esc(nomDoc(k)) + (u ? ' ★' : '') + '</button>'; }).join('') +
       '<span class="docs-end"><button class="btn ghost small" data-a="togglepdf">' + (session.pdf ? 'Masquer les documents' : 'Afficher les documents') + '</button></span>'
@@ -464,7 +475,7 @@ V.cas = function (mode, arg) {
       '<button class="btn ghost small" data-a="togglepdf">' + (session.pdf ? 'Masquer le PDF' : 'Afficher le PDF') + '</button></span>';
   var h = '<div class="row sp"><h1>' + esc(session.titre) + '</h1><button class="btn ghost small" data-a="quit">Abandonner</button></div>' +
     '<p class="muted">Question ' + (session.i + 1) + ' sur ' + session.items.length + ' · ' + esc(sujetLabel(s)) + '</p>' +
-    '<div class="split ' + (session.pdf && !s.ctrl ? (S.layout === 'cote' ? 'cote' : 'stack') : 'nopdf') + '"><div>' +
+    '<div class="split ' + (session.pdf && (!s.ctrl || q.sujetTxt) ? (S.layout === 'cote' ? 'cote' : 'stack') : 'nopdf') + '"><div>' +
     '<div class="card">' +
       (s.ent ? (session.i === 0 ? '<div class="ctx">' + esc(s.contexte) + '</div>' : '') : '<p class="small muted where">' + esc(q.dossier ? q.dossier + (q.mission ? ' › ' + q.mission : '') : q.mission) + '</p>') +
       (q.contexte ? '<div class="ctx">' + esc(q.contexte) + '</div>' : '') +
@@ -486,12 +497,13 @@ V.cas = function (mode, arg) {
       (q.mc.length ? '<div class="kw">' + it.auto.found.map(function (w) { return '<span class="tag good">✓ ' + esc(w) + '</span>'; }).join('') + it.auto.missing.map(function (w) { return '<span class="tag">à ajouter : ' + esc(w) + '</span>'; }).join('') + '</div>' : '') +
       '<div class="corr"><b class="small">Correction proposée (non officielle)</b><p style="white-space:pre-wrap">' + esc(q.corr || 'Pas de correction rédigée pour cette question.') + '</p>' + (study ? study.trace(q) : '') + '<div class="row">' + q.themes.map(themeTag).join('') + '</div></div>' +
       '<div class="row">' + iaBtn('corr', iaCorrige(q, it.rep), 'Faire corriger par l\'IA + réponse modèle') + '</div>' +
-      (q.mats && ERR[q.mats[0]] ? '<details class="more"><summary>Erreurs fréquentes en ' + esc(MATIERES[q.mats[0]][4]) + '</summary><div class="cols">' + erreursDe(q.mats[0], 3).map(erreurItem).join('') + '</div><a class="small" href="#erreursfreq">Toutes les erreurs fréquentes</a></details>' : '') + memoBox(q.id, 'Ma note sur cette question : ce que j\'avais oublié, la bonne méthode…') +
+      (q.mats && ERR[q.mats[0]] ? '<details class="more"><summary>Pièges fréquents en ' + esc(MATIERES[q.mats[0]][4]) + '</summary><div class="cols">' + erreursDe(q.mats[0], 3).map(erreurItem).join('') + '</div><a class="small" href="#erreursfreq">Toutes les pièges fréquents</a></details>' : '') + memoBox(q.id, 'Ma note sur cette question : ce que j\'avais oublié, la bonne méthode…') +
       '<p class="small muted">La note automatique ne compare que des mots-clés : si tu as dit la même chose avec d\'autres mots, remonte ta note. Après lecture de la correction :</p>' +
       '<div class="row">' + [[0, 'Faux'], [0.25, 'Peu'], [0.5, 'Moitié'], [0.75, 'Presque'], [1, 'Tout bon']].map(function (o) { return '<button class="btn ghost small' + (Math.abs(it.note - o[0]) < 0.13 ? ' on' : '') + '" data-a="self" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div>' +
       '<div class="row" style="margin-top:1rem"><button class="btn" data-a="suivant">' + (session.i + 1 < session.items.length ? 'Question suivante' : 'Voir ma note') + '</button></div>';
   }
-  h += '</div></div>' + (session.pdf && !s.ctrl ? '<div class="pdf' + (s.ent ? ' txt' : '') + '" id="pdf">' + (s.ent ? docFrame(q.sujet, cur) : pdfFrame(q.sujet, session.page || q.page)) + '</div>' : '') + '</div>';
+  h += '</div></div>' + (session.pdf && s.ctrl && q.sujetTxt ? '<div class="pdf txt" id="pdf"><div class="fiche">' + miniMd(q.sujetTxt) + '</div></div>'
+    : session.pdf && !s.ctrl ? '<div class="pdf' + (s.ent ? ' txt' : '') + '" id="pdf">' + (s.ent ? docFrame(q.sujet, cur) : pdfFrame(q.sujet, session.page || q.page)) + '</div>' : '') + '</div>';
   return h;
 };
 function startSession(o) {
@@ -512,7 +524,7 @@ function startSession(o) {
   session = { pretest: o.pretest ? (o.theme ? '#biblio/theme/' + o.theme : '#biblio') : '', titre: titre, theme: o.theme || '', items: pool.map(function (q) { return { q: q, rep: '', valide: false, note: 0 }; }), i: 0, pdf: true, page: 0, doc: '', fini: false };
 }
 function viewBilan() {
-  var n = session.items.length, moy = session.items.reduce(function (t, it) { return t + it.note; }, 0) / n, note = moy * 20;
+  var n = session.items.length, moy = moyCopie(session.items), note = moy * 20;
   var cls = note >= 14 ? 'good' : note >= 10 ? 'mid' : 'bad';
   var faibles = {}; session.items.forEach(function (it) { if (it.note < 0.5) it.q.themes.forEach(function (t) { faibles[t] = 1; }); });
   if (session.pretest) return '<h1>' + esc(session.titre) + '</h1><div class="verdict mid"><div class="note20">' + sur20(moy) + ' / 20</div><b>C\'était un prétest : la note ne compte pas vraiment. Le fait d\'avoir cherché les réponses avant de lire le cours va t\'aider à mieux retenir.</b></div>' +
@@ -640,7 +652,7 @@ V.biblio = function (mode, arg) {
   var ln = base.filter(function (n) { return n.mat === S.mat; });
   return head + picker({ sub: true, count: function (e, m) { return base.filter(function (n) { return MATIERES[n.mat][2] === e && (!m || n.mat === m); }).length; } }) +
     (mesQuestions().some(function (q) { return q.mats.indexOf(S.mat) >= 0; }) && !ln.some(function (n) { return S.cards[n.id]; }) ? '<div class="card hint pre"><div><b>Tu commences cette matière ?</b><p class="small muted">Fais d\'abord un prétest de 3 questions : chercher avant d\'apprendre aide à mieux retenir.</p></div><button class="btn" data-a="pretest" data-k="mat" data-v="' + S.mat + '">Faire le prétest</button></div>' : '') +
-    (ERR[S.mat] ? '<details class="card errs"><summary><b>Les erreurs fréquentes en ' + esc(MATIERES[S.mat][4]) + '</b> <span class="muted small">· ' + ERR[S.mat].length + '</span></summary><div class="cols" style="margin-top:.8rem">' + erreursDe(S.mat).map(erreurItem).join('') + '</div></details>' : '') +
+    (ERR[S.mat] ? '<details class="card errs"><summary><b>Les pièges fréquents en ' + esc(MATIERES[S.mat][4]) + '</b> <span class="muted small">· ' + ERR[S.mat].length + '</span></summary><div class="cols" style="margin-top:.8rem">' + erreursDe(S.mat).map(erreurItem).join('') + '</div></details>' : '') +
     '<p class="muted small" style="margin-bottom:1rem">' + esc(MATIERES[S.mat][1]) + ' Quand tu maîtrises une notion, « J\'ai appris » la retire d\'ici et la range dans « Notions apprises ».</p>' +
     (ln.length ? notionsParCategorie(ln, false) : '<div class="card"><p class="muted">Plus rien à apprendre ici avec ce filtre. Bravo.</p></div>');
 };
@@ -699,22 +711,21 @@ V.annales = function (sid, pageArg) {
           (showC ? '<div class="corr"><b class="small">Correction proposée (non officielle)</b><p>' + esc(q.corr || '—') + '</p>' + (study ? study.trace(q) : '') + '<div class="row">' + q.themes.map(themeTag).join('') + '</div></div>' : '') + '</div>';
       }).join('') + '</div><div class="pdf" id="pdf">' + pdfFrame(sid, page) + '</div></div>';
   }
+  var avancement = function (s) { var qs = QUESTIONS.filter(function (q) { return q.sujet === s.id; }), d = qs.filter(function (q) { return S.qdone[q.id] != null; }).length; return '<td class="n">' + qs.length + '</td><td class="n">' + d + ' / ' + qs.length + '</td>'; };
   var h = '<h1>Sujets et corrections</h1><p class="lead">Les sujets officiels de métropole depuis la réforme, téléchargés depuis le Réseau Certa (licence CC BY-NC-SA). Chaque sujet s\'ouvre en PDF, non corrigé ; les corrections de l\'application sont des propositions rédigées pour réviser, car les corrigés officiels sont réservés aux enseignants.</p>';
   [['E7 Cybersécurité — option SISR', 'SISR'], ['E7 Cybersécurité — option SLAM', 'SLAM'], ['E4 CEJM (sujet propre au BTS SIO)', 'CEJM'], ['E4 CEJM — sujets des autres BTS tertiaires (même programme, pour s\'entraîner)', 'CEJM', 1]].forEach(function (g) {
     var ls = ANNALES.sujets.filter(function (s) { return s.option === g[1] && !s.autre === !g[2] && sujOK(s); });
     if (!ls.length) return;
     h += '<h2>' + g[0] + '</h2><div class="card"><table><tr><th>Session</th><th>Cas</th><th>Questions</th><th>Travaillées</th><th></th></tr>' +
       ls.sort(function (a, b) { return b.annee - a.annee; }).map(function (s) {
-        var qs = QUESTIONS.filter(function (q) { return q.sujet === s.id; }), d = qs.filter(function (q) { return S.qdone[q.id] != null; }).length;
-        return '<tr><td class="n">' + s.annee + '</td><td><a href="#annales/' + s.id + '">' + esc(s.cas) + '</a></td><td class="n">' + qs.length + '</td><td class="n">' + d + ' / ' + qs.length + '</td>' +
+        return '<tr><td class="n">' + s.annee + '</td><td><a href="#annales/' + s.id + '">' + esc(s.cas) + '</a></td>' + avancement(s) +
           '<td><div class="row"><a class="btn ghost small" target="_blank" rel="noopener" href="' + s.fichier + '">Sujet PDF</a><a class="btn ghost small" href="#annales/' + s.id + '">Questions et corrections</a></div></td></tr>';
       }).join('') + '</table></div>';
   });
   var ents = ENT.filter(sujOK);
   if (ents.length) h += '<h2>Études de cas d\'entraînement (épreuves sans annales)</h2><p class="small muted">Rédigées pour l\'application, sur des entreprises fictives, pour s\'entraîner à E6, E5, E3, E2 et E1. Ce ne sont pas des sujets officiels.</p><div class="card"><table><tr><th>Épreuve</th><th>Cas</th><th>Questions</th><th>Travaillées</th><th></th></tr>' +
     ents.map(function (s) {
-      var qs = QUESTIONS.filter(function (q) { return q.sujet === s.id; }), d = qs.filter(function (q) { return S.qdone[q.id] != null; }).length;
-      return '<tr><td>' + esc(MATIERES[s.mat][0]) + '</td><td><a href="#annales/' + s.id + '">' + esc(s.cas) + '</a></td><td class="n">' + qs.length + '</td><td class="n">' + d + ' / ' + qs.length + '</td><td><div class="row"><button class="btn ghost small" data-a="startsujet" data-id="' + s.id + '">M\'interroger</button><a class="btn ghost small" href="#annales/' + s.id + '">Documents et corrections</a></div></td></tr>';
+      return '<tr><td>' + esc(MATIERES[s.mat][0]) + '</td><td><a href="#annales/' + s.id + '">' + esc(s.cas) + '</a></td>' + avancement(s) + '<td><div class="row"><button class="btn ghost small" data-a="startsujet" data-id="' + s.id + '">M\'interroger</button><a class="btn ghost small" href="#annales/' + s.id + '">Documents et corrections</a></div></td></tr>';
     }).join('') + '</table></div>';
   return h + '<h2>Sources officielles</h2><div class="card"><ul>' +
     '<li><a target="_blank" rel="noopener" href="https://www.reseaucerta.org/sujet-examen/sujets-dexamen-e6-cyberscurit-des-services-informatiques/">Réseau Certa — sujets E7 Cybersécurité</a> (y compris Nouvelle-Calédonie et sujets de secours, utiles pour s\'entraîner davantage)</li>' +
@@ -854,23 +865,33 @@ V.erreurs = function () {
 
 /* — Examen blanc : sujet complet, chronomètre, corrections seulement après avoir rendu la copie — */
 var examRes = null;   // résultat du dernier examen rendu (affiché jusqu'à ce qu'on le ferme)
-function examQs(sid) { return QUESTIONS.filter(function (q) { return q.sujet === sid; }); }
+/* Un sujet type BTS d'un contrôle a pour identifiant « K_<contrôle>#<n° du dossier> » : ses questions sont celles de ce dossier, dans l'ordre. */
+function examQs(sid) {
+  var m = /^K_(.+)#(\d+)$/.exec(sid);
+  if (m) { var pre = 'k_' + m[1] + '_' + m[2] + '_q', L = []; for (var i = 0; CTRLQ[pre + i]; i++) L.push(CTRLQ[pre + i]); return L; }
+  return QUESTIONS.filter(function (q) { return q.sujet === sid; });
+}
+/* Moyenne d'une copie (0 à 1), pondérée par le barème quand les questions en ont un (sujets type BTS), sinon simple moyenne. */
+function moyCopie(items) { var tw = 0, t = 0; items.forEach(function (it) { var w = it.q.points || 1; tw += w; t += it.note * w; }); return tw ? t / tw : 0; }
+function btsSujets() { return Object.keys(SUJETS).filter(function (k) { return SUJETS[k].bts && examQs(k).length; }).map(function (k) { return SUJETS[k]; }); }
 function fmtTime(ms) { ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); s = s % 60; return (h ? h + ' h ' : '') + (m < 10 && h ? '0' : '') + m + ' min ' + (s < 10 ? '0' : '') + s + ' s'; }
 V.examen = function () {
   var R = S.examRun;
   if (examRes) return viewExamRes();
+  if (R && !examQs(R.sid).length) { S.examRun = R = null; save(); toast('Le sujet de l\'examen en cours a été supprimé : l\'examen est annulé.'); }   // contrôle ou dossier supprimé entre-temps
   if (!R) {
-    var opts = ANNALES.sujets.concat(ENT).filter(sujOK).map(function (s) { return '<option value="' + s.id + '">' + esc(sujetLabel(s)) + ' (' + examQs(s.id).length + ' questions)</option>'; }).join('');
+    var opt = function (s) { return '<option value="' + esc(s.id) + '"' + (V.examen.pre === s.id ? ' selected' : '') + '>' + esc(sujetLabel(s)) + ' (' + examQs(s.id).length + ' questions)</option>'; }, bts = btsSujets();
+    var opts = (bts.length ? '<optgroup label="Mes sujets type BTS (Mes contrôles)">' + bts.map(opt).join('') + '</optgroup><optgroup label="Annales et cas d\'entraînement">' : '') + ANNALES.sujets.concat(ENT).filter(sujOK).map(opt).join('') + (bts.length ? '</optgroup>' : '');
     return '<h1>Examen blanc</h1><p class="lead">Un sujet complet, en temps limité, comme le jour J : tu ne vois les corrections qu\'après avoir rendu ta copie. Tes réponses sont enregistrées au fur et à mesure (tu peux fermer la page et reprendre).</p>' +
       '<div class="card"><div class="filters"><label>Sujet<select id="xSu">' + opts + '</select></label>' +
-      '<label>Durée<select id="xDur"><option value="240">4 h (E7, E4 : durée réelle)</option><option value="120">2 h</option><option value="60" selected>1 h</option><option value="30">30 min</option></select></label>' +
-      '<button class="btn" data-a="xstart">Commencer l\'examen</button></div><p class="small muted">Conseil : pour E7 et E4, choisis 4 h avec le sujet complet au moins une fois avant l\'examen. Pour les cas d\'entraînement, 1 h suffit.</p></div>' +
+      '<label>Durée<select id="xDur">' + [[240, '4 h (E7, E4 : durée réelle)'], [120, '2 h'], [60, '1 h'], [30, '30 min']].map(function (d) { return '<option value="' + d[0] + '"' + (d[0] === (V.examen.pre ? 240 : 60) ? ' selected' : '') + '>' + d[1] + '</option>'; }).join('') + '</select></label>' +
+      '<button class="btn" data-a="xstart">Commencer l\'examen</button></div><p class="small muted">Conseil : pour E7 et E4, choisis 4 h avec le sujet complet au moins une fois avant l\'examen. Pour les cas d\'entraînement, 1 h suffit. Les sujets type BTS rédigés par l\'IA dans « Mes contrôles » apparaissent en tête de liste ; leur note tient compte du barème.</p></div>' +
       (S.examHist.length ? '<h2>Mes examens blancs</h2><div class="card"><table><tr><th>Date</th><th>Sujet</th><th>Temps utilisé</th><th>Note</th></tr>' + S.examHist.slice().reverse().map(function (h) {
         return '<tr><td class="n">' + new Date(h.date).toLocaleDateString('fr-FR') + '</td><td>' + esc(h.titre) + '</td><td class="n">' + fmtTime(h.temps) + '</td><td class="n">' + noteTag(h.note / 20) + ' / 20</td></tr>'; }).join('') + '</table></div>' : '');
   }
   var s = SUJETS[R.sid], qs = examQs(R.sid), q = qs[R.i], reste = R.start + R.dur - Date.now();
   var cur = R.doc || (s.ent ? (q.utiles[0] || 'ctx') : '');
-  var docs = s.ent ? '<button class="btn ghost small" data-a="xdoc" data-k="ctx">Contexte</button>' + Object.keys(s.html).map(function (k) { return '<button class="btn small ' + (cur === k ? 'on' : 'ghost') + '" data-a="xdoc" data-k="' + k + '">' + esc(k.replace('Doc ', 'Document ')) + '</button>'; }).join('')
+  var docs = s.bts ? '' : s.ent ? '<button class="btn ghost small" data-a="xdoc" data-k="ctx">Contexte</button>' + Object.keys(s.html).map(function (k) { return '<button class="btn small ' + (cur === k ? 'on' : 'ghost') + '" data-a="xdoc" data-k="' + k + '">' + esc(k.replace('Doc ', 'Document ')) + '</button>'; }).join('')
     : '<button class="btn ghost small" data-a="xpage" data-p="' + q.page + '">Énoncé (p. ' + q.page + ')</button><button class="btn ghost small" data-a="xpage" data-p="' + (s.option === 'CEJM' ? 2 : 3) + '">Contexte</button>' + Object.keys(s.docs).map(function (k) { return '<button class="btn ghost small" data-a="xpage" data-p="' + s.docs[k] + '">' + esc(k.replace('Doc ', 'Document ')) + '</button>'; }).join('');
   return '<div class="row sp"><h1>Examen blanc — ' + esc(s.cas) + '</h1><div class="row"><span class="timer' + (reste < 600000 ? ' low' : '') + '" id="timer">' + fmtTime(reste) + '</span><button class="btn" data-a="xend">Rendre ma copie</button></div></div>' +
     '<div class="qnav">' + qs.map(function (x, i) { return '<button class="qn' + (i === R.i ? ' on' : '') + ((R.reps[x.id] || '').trim() ? ' done' : '') + '" data-a="xgo" data-v="' + i + '" title="Question ' + esc(x.num) + '">' + esc(x.num) + '</button>'; }).join('') + '</div>' +
@@ -880,31 +901,32 @@ V.examen = function () {
       '<p class="qtext">Question ' + esc(q.num) + ' — ' + esc(q.texte) + '</p><div class="row docs">' + docs + '</div>' +
       '<textarea id="xrep" placeholder="Rédige ta réponse… (enregistrée automatiquement)">' + esc(R.reps[q.id] || '') + '</textarea>' +
       '<div class="row sp" style="margin-top:.7rem"><button class="btn ghost" data-a="xgo" data-v="' + (R.i - 1) + '"' + (R.i ? '' : ' disabled') + '>← Précédente</button><span class="small muted">' + Object.keys(R.reps).filter(function (k) { return (R.reps[k] || '').trim(); }).length + ' / ' + qs.length + ' réponses rédigées</span><button class="btn ghost" data-a="xgo" data-v="' + (R.i + 1) + '"' + (R.i + 1 < qs.length ? '' : ' disabled') + '>Suivante →</button></div>' +
-    '</div></div><div class="pdf' + (s.ent ? ' txt' : '') + '" id="pdf">' + (s.ent ? docFrame(R.sid, cur) : pdfFrame(R.sid, R.page || q.page)) + '</div></div>';
+    '</div></div><div class="pdf' + (s.ent || s.bts ? ' txt' : '') + '" id="pdf">' + (s.bts ? '<div class="fiche">' + miniMd(s.fiche) + '</div>' : s.ent ? docFrame(R.sid, cur) : pdfFrame(R.sid, R.page || q.page)) + '</div></div>';
 };
 function examRendre() {
   var R = S.examRun; if (!R) return;
+  if (!SUJETS[R.sid] || !examQs(R.sid).length) { S.examRun = null; save(); return; }
   var qs = examQs(R.sid), items = qs.map(function (q) {
     var rep = (R.reps[q.id] || '').trim(), a = autoScore(q, rep);
     S.qdone[q.id] = a.score; dayCount('q');
     (S.answers[q.id] = S.answers[q.id] || []).push({ d: Date.now(), rep: rep, auto: a.score, note: a.score });
     return { q: q, rep: rep, auto: a, note: a.score, answerIndex: S.answers[q.id].length - 1 };
   });
-  var note = Math.round(items.reduce(function (t, it) { return t + it.note; }, 0) / items.length * 200) / 10;
+  var note = Math.round(moyCopie(items) * 200) / 10;
   S.examHist.push({ date: Date.now(), sid: R.sid, titre: sujetLabel(SUJETS[R.sid]), note: note, temps: Math.min(Date.now() - R.start, R.dur), n: items.length });
   S.history.push({ date: Date.now(), titre: 'Examen blanc : ' + SUJETS[R.sid].cas, n: items.length, note: note });
   examRes = { sid: R.sid, items: items, hist: S.examHist.length - 1, history: S.history.length - 1 };
   S.examRun = null; save();
 }
 function viewExamRes() {
-  var r = examRes, h = S.examHist[r.hist], moy = r.items.reduce(function (t, it) { return t + it.note; }, 0) / r.items.length;
+  var r = examRes, h = S.examHist[r.hist], moy = moyCopie(r.items);
   return '<h1>Résultat de l\'examen blanc</h1><p class="muted">' + esc(h.titre) + ' · temps utilisé : ' + fmtTime(h.temps) + '</p>' +
     '<div class="verdict ' + (moy >= 0.7 ? 'good' : moy >= 0.5 ? 'mid' : 'bad') + '"><div class="note20">' + sur20(moy) + ' / 20</div><b>Note automatique (mots-clés). Lis chaque correction et ajuste ta note : la note de l\'examen se met à jour.</b></div>' +
     r.items.map(function (it, i) {
       return '<div class="card"><p class="qtext">Question ' + esc(it.q.num) + ' — ' + esc(it.q.texte) + '</p><div class="corr"><b class="small">Ta réponse</b><p style="white-space:pre-wrap">' + (it.rep ? esc(it.rep) : '<span class="muted">(pas de réponse)</span>') + '</p></div>' +
         '<div class="kw">' + it.auto.found.map(function (w) { return '<span class="tag good">✓ ' + esc(w) + '</span>'; }).join('') + it.auto.missing.map(function (w) { return '<span class="tag">à ajouter : ' + esc(w) + '</span>'; }).join('') + '</div>' +
         '<details><summary>Voir la correction proposée</summary><div class="corr"><p style="white-space:pre-wrap">' + esc(it.q.corr) + '</p>' + (study ? study.trace(it.q) : '') + '</div></details>' +
-        '<div class="row" style="margin-top:.5rem"><span class="small muted">Ma note : <b>' + sur20(it.note) + ' / 20</b></span>' + [[0, 'Faux'], [0.25, 'Peu'], [0.5, 'Moitié'], [0.75, 'Presque'], [1, 'Tout bon']].map(function (o) { return '<button class="btn ghost small' + (Math.abs(it.note - o[0]) < 0.13 ? ' on' : '') + '" data-a="xself" data-i="' + i + '" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + iaBtn('x' + i, iaCorrige(it.q, it.rep), 'Corriger avec l\'IA') + '</div></div>';
+        '<div class="row" style="margin-top:.5rem"><span class="small muted">Ma note : <b>' + (it.q.points ? String(Math.round(it.note * it.q.points * 4) / 4).replace('.', ',') + ' / ' + it.q.points + ' points' : sur20(it.note) + ' / 20') + '</b></span>' + [[0, 'Faux'], [0.25, 'Peu'], [0.5, 'Moitié'], [0.75, 'Presque'], [1, 'Tout bon']].map(function (o) { return '<button class="btn ghost small' + (Math.abs(it.note - o[0]) < 0.13 ? ' on' : '') + '" data-a="xself" data-i="' + i + '" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + iaBtn('x' + i, iaCorrige(it.q, it.rep), 'Corriger avec l\'IA') + '</div></div>';
     }).join('') + '<div class="row"><button class="btn" data-a="xclose">Terminer</button><a class="btn ghost" href="#erreurs">Voir mon carnet d\'erreurs</a></div>';
 }
 
@@ -949,7 +971,6 @@ V.methode = function () {
 
 /* — Mes contrôles : documents du cours + dossiers de révision créés par l'IA (copier-coller, sans clé API) — */
 function ctrlById(id) { return (S.ctrl || []).filter(function (c) { return c.id === id; })[0]; }
-function joursAvant(date) { return daysUntil(date); }
 function ctrlQs(c) { return Object.keys(CTRLQ).map(function (k) { return CTRLQ[k]; }).filter(function (q) { return q.ctrl === c.id; }); }
 function ctrlCards(c) { return Object.keys(CTRLC).map(function (k) { return CTRLC[k]; }).filter(function (n) { return n.ctrl === c.id; }); }
 function ctrlNote(c) {
@@ -968,28 +989,110 @@ function miniMd(t) {
   });
   return out + (inList ? '</ul>' : '');
 }
-function ctrlPrompt(c, o) {
-  var deja = ctrlQs(c).map(function (q) { return '- ' + q.texte; }).concat(ctrlCards(c).map(function (n) { return '- ' + n.q; }));
-  var texte = (c.texte || '').trim();
-  return IA_INTRO + 'Je prépare un contrôle en classe : « ' + c.titre + ' » (matière : ' + matLabel(c.mat) + (c.date ? ', le ' + new Date(c.date).toLocaleDateString('fr-FR') : '') + ').' +
-    (c.consignes ? '\nChapitres et consignes du professeur : ' + c.consignes : '') +
-    (texte ? '\n\nVoici mes documents de cours :\n"""\n' + texte + '\n"""' : '\n\nMes documents de cours sont joints à ce message (PDF ou photos) : base-toi uniquement sur eux.') +
-    '\n\nCrée un NOUVEAU dossier de révision, niveau ' + o.niveau + ', basé uniquement sur ces documents (n\'invente pas de contenu hors programme).' +
-    (deja.length ? ' Ne reprends AUCUNE de ces questions déjà travaillées, propose des angles différents :\n' + deja.slice(0, 60).join('\n') : '') +
-    '\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans aucun texte avant ou après, exactement au format :\n' +
-    '{"fiche": "fiche de synthèse claire du cours, avec des titres commençant par # et des puces commençant par -", ' +
-    '"flashcards": [{"q": "question", "r": "réponse courte", "explication": "explication simple", "exemple": "exemple concret", "piege": "erreur fréquente à éviter"}], ' +
-    '"questions": [{"q": "question type contrôle", "motscles": ["notion attendue|synonyme", "autre notion"], "correction": "correction rédigée complète"}]}\n' +
-    'Fais ' + o.nc + ' flashcards et ' + o.nq + ' questions. Pour « motscles » : 3 à 6 notions indispensables dans une bonne réponse, en minuscules, les variantes séparées par |.';
+/* Trois demandes possibles à l'IA (o.mode) :
+   'dossier'   : nouveau dossier complet (fiche + flashcards + questions)
+   'questions' : questions supplémentaires, ajoutées au dernier dossier de révision
+   'bts'       : sujet d'entraînement au format de l'épreuve du BTS, avec des questions d'annales de la même épreuve comme modèle */
+var CTRL_MODES = [['dossier', 'Un dossier complet : fiche, flashcards et questions'], ['questions', 'Seulement des questions en plus'], ['bts', 'Un sujet type BTS SIO, d\'après les annales']];
+var JSON_CONSIGNE = '\n\nRéponds UNIQUEMENT avec un objet JSON valide, placé dans un seul bloc de code ```json (pour que je puisse le copier avec le bouton « Copier » du bloc), sans aucun texte avant ou après, exactement au format :\n';
+var JSON_QUESTION = '{"q": "question", "motscles": ["notion attendue|synonyme", "autre notion"], "correction": "correction rédigée complète"}';
+var JSON_MOTSCLES = 'Pour « motscles » : 3 à 6 notions indispensables dans une bonne réponse, en minuscules, les variantes séparées par |.';
+/* Questions d'annales de la même épreuve, pour montrer à l'IA le style et le niveau attendus (un ou deux sujets officiels au hasard). */
+function annalesModeles(c) {
+  var ep = MATIERES[c.mat] && MATIERES[c.mat][2], opt = MATIERES[c.mat] && MATIERES[c.mat][3];
+  var sujets = shuffle(ANNALES.sujets.filter(function (s) { return ep && String(s.epreuve).indexOf(ep) === 0 && (!opt || s.option === opt) && sujOK(s); }));
+  if (!sujets.length) return '';
+  var out = [];
+  sujets.slice(0, 2).forEach(function (s) {
+    var qs = QUESTIONS.filter(function (q) { return q.sujet === s.id && q.corr; }).slice(0, 4);
+    if (!qs.length) return;
+    out.push('Sujet « ' + s.cas + ' » (' + s.annee + ') :\n' + qs.map(function (q) { return '- ' + q.texte.slice(0, 300) + '\n  Éléments de correction : ' + q.corr.slice(0, 350); }).join('\n'));
+  });
+  return out.join('\n\n');
 }
-function parseDossier(txt) {
-  var a = txt.indexOf('{'), b = txt.lastIndexOf('}');
-  if (a < 0 || b < a) throw new Error('Je ne trouve pas de JSON dans le texte collé (il doit commencer par { et finir par }).');
-  var d = JSON.parse(txt.slice(a, b + 1));
+function ctrlPrompt(c, o) {
+  var deja = ctrlQs(c).map(function (q) { return '- ' + q.texte; }).concat(o.mode === 'dossier' ? ctrlCards(c).map(function (n) { return '- ' + n.q; }) : []);
+  var texte = (c.texte || '').trim(), ep = MATIERES[c.mat] && MATIERES[c.mat][2];
+  var base = IA_INTRO + 'Je prépare un contrôle en classe : « ' + c.titre + ' » (matière : ' + matLabel(c.mat) + (c.date ? ', le ' + new Date(c.date).toLocaleDateString('fr-FR') : '') + ').' +
+    (c.consignes ? '\nChapitres et consignes du professeur : ' + c.consignes : '') +
+    (texte ? '\n\nVoici mes documents de cours :\n"""\n' + texte + '\n"""' : '\n\nMes documents de cours sont joints à ce message (PDF ou photos) : base-toi uniquement sur eux.');
+  var evite = deja.length ? ' Ne reprends AUCUNE de ces questions déjà travaillées, propose des angles différents :\n' + deja.slice(0, 60).join('\n') : '';
+  if (o.mode === 'questions') return base +
+    '\n\nAjoute ' + o.nq + ' NOUVELLES questions type contrôle, niveau ' + o.niveau + ', basées uniquement sur ces documents.' + evite +
+    JSON_CONSIGNE + '{"questions": [' + JSON_QUESTION + ']}\n' + JSON_MOTSCLES;
+  if (o.mode === 'bts') {
+    var modeles = annalesModeles(c);
+    return base +
+      '\n\nRédige un sujet d\'entraînement au format de l\'épreuve ' + (ep && EPREUVES[ep] ? ep + ' « ' + EPREUVES[ep][0] + ' » (' + EPREUVES[ep][1] + ')' : 'écrite') + ' du BTS SIO, centré sur le programme de ce contrôle :' +
+      ' une organisation fictive mais réaliste (contexte), 2 à 4 documents annexes courts (extraits de configuration, de schéma réseau décrit en texte, de code, de journal, de contrat, de tableau…), puis ' + o.nq + ' questions regroupées en dossiers et missions, qui obligent à exploiter les documents et à justifier.' +
+      (modeles ? '\n\nInspire-toi du style, du vocabulaire et du niveau de ces questions d\'annales officielles de la même épreuve (ne les recopie pas) :\n' + modeles : '') + evite +
+      JSON_CONSIGNE + '{"sujet": {"titre": "nom de l\'organisation et thème", "contexte": "présentation de l\'organisation et de la situation", "documents": [{"titre": "Document 1 : …", "contenu": "contenu du document"}]}, ' +
+      '"questions": [{"dossier": "Dossier 1 – titre du dossier", "q": "énoncé de la question, sans numéro", "points": 3, "motscles": ["notion attendue|synonyme"], "correction": "correction rédigée complète, comme un corrigé officiel"}]}\n' + JSON_MOTSCLES + ' Le total des « points » fait 20.';
+  }
+  return base +
+    '\n\nCrée un NOUVEAU dossier de révision, niveau ' + o.niveau + ', basé uniquement sur ces documents (n\'invente pas de contenu hors programme).' + evite +
+    JSON_CONSIGNE + '{"fiche": "fiche de synthèse claire du cours, avec des titres commençant par # et des puces commençant par -", ' +
+    '"flashcards": [{"q": "question", "r": "réponse courte", "explication": "explication simple", "exemple": "exemple concret", "piege": "erreur fréquente à éviter"}], ' +
+    '"questions": [' + JSON_QUESTION + ']}\n' +
+    'Fais ' + o.nc + ' flashcards et ' + o.nq + ' questions. ' + JSON_MOTSCLES;
+}
+/* Réponse de l'IA copiée « mise en forme » (bouton Copier sous un message ChatGPT, hors bloc de code) : le texte arrive avec des
+   échappements Markdown (\* \_ \[), des barres obliques en fin de ligne, des entités HTML (&#x20;), des guillemets typographiques,
+   de vrais retours à la ligne dans les textes ou des virgules en trop. On remet tout ça d'aplomb avant de relire le JSON. */
+function repairJson(t) {
+  t = String(t).replace(/```(?:json)?/gi, '')
+    .replace(/&#x([0-9a-f]+);/gi, function (m, h) { return String.fromCharCode(parseInt(h, 16)); })
+    .replace(/&#(\d+);/g, function (m, n) { return String.fromCharCode(+n); })
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    .replace(/ /g, ' ').replace(/\\(\r?\n)/g, '$1');
+  var out = '', close = '';   // close = guillemet qui fermera le texte en cours ('' hors d'un texte)
+  for (var i = 0; i < t.length; i++) {
+    var ch = t[i];
+    if (close) {
+      if (ch === '\\') { var nx = t[i + 1]; if (nx != null && '"\\/bfnrtu'.indexOf(nx) >= 0) { out += ch + nx; i++; } continue; }   // \* \_ … : on garde juste le caractère
+      if (ch === close || (close === '”' && ch === '"')) { close = ''; out += '"'; continue; }
+      if (ch === '\n') { out += '\\n'; continue; }
+      if (ch === '\r') continue;
+      if (ch === '\t') { out += '\\t'; continue; }
+      out += ch; continue;
+    }
+    if (ch === '"' || ch === '“' || ch === '”') { close = ch === '"' ? '"' : '”'; out += '"'; continue; }
+    if (ch === ',' && /^\s*[}\]]/.test(t.slice(i + 1))) continue;
+    if (ch === '\\') continue;
+    out += ch;
+  }
+  return out;
+}
+/* Lit le JSON d'une réponse d'IA collée (texte autour toléré), en le réparant si besoin. liste = accepter aussi une liste [ … ]. */
+function lireJsonIA(txt, liste) {
+  txt = String(txt || '');
+  var a = txt.indexOf('{'), b = txt.lastIndexOf('}'), a2 = liste ? txt.indexOf('[') : -1, brut;
+  if (a2 >= 0 && (a < 0 || a2 < a)) { a = a2; b = txt.lastIndexOf(']'); }
+  if (a < 0 || b < a) throw new Error('je ne trouve pas de JSON dans le texte collé (il doit commencer par { et finir par }). Copie toute la réponse de l\'IA.');
+  brut = txt.slice(a, b + 1);
+  try { return JSON.parse(brut); } catch (e1) {
+    try { return JSON.parse(repairJson(brut)); } catch (e2) { throw new Error('le texte collé n\'est pas un JSON lisible (' + e1.message + '). Dans ChatGPT, utilise le bouton « Copier » en haut du bloc de code, ou redemande « réponds uniquement avec le bloc de code JSON ».'); }
+  }
+}
+/* Message sous la zone de collage quand une réponse d'IA ne peut pas être ajoutée. */
+function erreurImport(el, x) { el.className = 'small bad-t'; el.textContent = 'Impossible d\'ajouter : ' + x.message; }
+/* Nom de fichier lisible à partir d'un titre (« Contrôle VLAN » → « controle-vlan »). */
+function slug(t) { return String(t).toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'sans-titre'; }
+function parseDossier(txt, partage) {
+  var d = lireJsonIA(txt);
   if (!d || typeof d !== 'object' || Array.isArray(d) || (d.flashcards != null && !Array.isArray(d.flashcards)) || (d.questions != null && !Array.isArray(d.questions))) throw new Error('flashcards et questions doivent être des listes.');
+  /* Sujet type BTS : le contexte et les documents deviennent la « fiche » du dossier, affichée à côté des questions pendant l'entraînement. */
+  var sj = d.sujet && typeof d.sujet === 'object' && !Array.isArray(d.sujet) ? d.sujet : null;
+  if (sj) d.fiche = '# ' + String(sj.titre || 'Sujet d\'entraînement') + '\n' + String(sj.contexte || '') +
+    (Array.isArray(sj.documents) ? sj.documents.map(function (doc, i) { doc = doc || {}; return '\n\n# ' + String(doc.titre || 'Document ' + (i + 1)) + '\n' + String(doc.contenu || ''); }).join('') : '');
+  (d.questions || []).forEach(function (x) { if (x && typeof x.q === 'string' && +x.points > 0 && +x.points <= 20) x.q += ' (' + String(+x.points).replace('.', ',') + ' point' + (+x.points > 1 ? 's' : '') + ')'; else if (x) delete x.points; });
   var cards = (d.flashcards || []).filter(function (x) { return x && typeof x.q === 'string' && typeof x.r === 'string' && x.q.trim() && x.r.trim(); }).map(function (x) { return { q: x.q, r: x.r, explication: String(x.explication || ''), exemple: String(x.exemple || ''), piege: String(x.piege || '') }; }), qs = (d.questions || []).filter(function (x) { return x && typeof x.q === 'string' && x.q.trim(); });
-  if (!cards.length && !qs.length && !d.fiche) throw new Error('Le JSON ne contient ni fiche, ni flashcards, ni questions.');
-  return { fiche: String(d.fiche || ''), cards: cards, qs: qs.map(function (x) { var words = x.motscles || []; if (typeof words === 'string') words = words.split(';'); if (!Array.isArray(words)) throw new Error('Les mots-clés doivent être une liste ou un texte séparé par des points-virgules.'); return { q: x.q, motscles: words.map(String).map(function (w) { return w.trim(); }).filter(Boolean), correction: String(x.correction || '') }; }) };
+  if (!cards.length && !qs.length && !d.fiche) throw new Error('le JSON ne contient ni fiche, ni flashcards, ni questions.');
+  if (!partage && !cards.length && !qs.length) {
+    var dit = String(d.fiche || '').replace(/\s+/g, ' ').trim();
+    throw new Error('l\'IA n\'a créé aucune flashcard ni question. Elle dit : « ' + (dit.length > 280 ? dit.slice(0, 280) + '…' : dit) + ' » En général, c\'est qu\'elle n\'a pas reçu ton cours : colle-le à l\'étape 1 (puis Enregistrer) ou joins tes PDF/photos dans la conversation, et redemande.');
+  }
+  return { type: sj ? 'bts' : '', fiche: String(d.fiche || ''), cards: cards, qs: qs.map(function (x) { var words = x.motscles || []; if (typeof words === 'string') words = words.split(';'); if (!Array.isArray(words)) throw new Error('Les mots-clés doivent être une liste ou un texte séparé par des points-virgules.'); var out = { q: x.q, motscles: words.map(String).map(function (w) { return w.trim(); }).filter(Boolean), correction: String(x.correction || '') }; if (x.dossier) out.dossier = String(x.dossier).slice(0, 200); if (sj && x.points) out.points = +x.points; return out; }) };
 }
 V.controles = function (id) {
   var c = id && ctrlById(id);
@@ -1001,31 +1104,36 @@ V.controles = function (id) {
       '<label>Date<input type="date" id="kD"></label><button class="btn" data-a="kadd">Créer</button></div>' +
       '<p class="small muted" style="margin:0">Un camarade t\'a envoyé un contrôle ? <label class="link">Importer un contrôle partagé<input type="file" id="kImp" accept=".json" hidden></label></p></div>' +
       (L.length ? '<div class="cols">' + L.map(function (k) {
-        var j = joursAvant(k.date), n = ctrlNote(k);
+        var j = daysUntil(k.date), n = ctrlNote(k);
         return '<a class="card tile" href="#controles/' + k.id + '"><b>' + esc(k.titre) + '</b><span>' + esc(matLabel(k.mat)) + (k.date ? ' · ' + (j > 0 ? 'dans ' + j + ' jour' + (j > 1 ? 's' : '') : j === 0 ? 'aujourd\'hui' : 'passé') : '') + '</span><span class="small">' + (k.dossiers || []).length + ' dossier(s) · ' + ctrlCards(k).length + ' flashcards · ' + ctrlQs(k).length + ' questions' + (n != null ? ' · ma note ' + sur20(n) + '/20' : '') + '</span></a>';
       }).join('') + '</div>' : '<div class="card"><p class="muted">Aucun contrôle pour l\'instant.</p></div>');
   }
-  var j = joursAvant(c.date), n = ctrlNote(c), qs = ctrlQs(c), cards = ctrlCards(c), o = V.controles.o = V.controles.o || { nc: 15, nq: 6, niveau: 'contrôle (comme en classe)' };
+  var j = daysUntil(c.date), n = ctrlNote(c), qs = ctrlQs(c), cards = ctrlCards(c), o = V.controles.o = V.controles.o || { mode: 'dossier', nc: 15, nq: 6, niveau: 'contrôle (comme en classe)' };
+  if (!o.mode) o.mode = 'dossier';
+  var aide = { dossier: 'Chaque demande crée un nouveau dossier, avec des questions différentes des précédentes.', questions: 'Les nouvelles questions s\'ajoutent à ton dernier dossier, sans reprendre celles que tu as déjà.',
+    bts: 'L\'IA reçoit ton cours et des questions d\'annales officielles de la même épreuve comme modèle. Elle rédige un sujet complet : contexte d\'organisation, documents et questions notées sur 20, avec corrigé.' }[o.mode];
   return '<p><a href="#controles">← Mes contrôles</a></p><div class="row sp"><h1>' + esc(c.titre) + '</h1><div class="row"><button class="btn ghost small" data-a="kexp" data-id="' + c.id + '" title="Crée un fichier à envoyer à tes camarades">Partager avec la classe</button><button class="btn ghost small" data-a="kdel" data-id="' + c.id + '">Supprimer</button></div></div>' +
     '<p class="muted">' + esc(matLabel(c.mat)) + (c.date ? ' · ' + new Date(c.date).toLocaleDateString('fr-FR') + (j > 0 ? ' (J-' + j + ')' : '') : '') + '</p>' +
     '<div class="grid stats"><div class="card stat"><b>' + (n != null ? sur20(n) + ' / 20' : '—') + '</b><span>ma note de révision</span></div><div class="card stat"><b>' + cards.length + '</b><span>flashcards</span></div><div class="card stat"><b>' + qs.length + '</b><span>questions corrigées</span></div></div>' +
-    (cards.length || qs.length ? '<div class="row" style="margin-bottom:1rem">' + (cards.length ? '<a class="btn" href="#flash/ctrl/' + c.id + '">Réviser les flashcards</a>' : '') + (qs.length ? '<button class="btn" data-a="kquiz" data-id="' + c.id + '">M\'interroger (questions)</button>' : '') +
+    (cards.length || qs.length ? '<div class="row" style="margin-bottom:1rem">' + (cards.length ? '<a class="btn" href="#flash/ctrl/' + c.id + '">Réviser les flashcards</a>' : '') + (qs.length ? '<button class="btn" data-a="kquiz" data-id="' + c.id + '">M\'interroger (questions)</button>' : '') + (cards.length >= 4 ? '<a class="btn" href="#chrono/ctrl/' + c.id + '">Quiz chrono</a>' : '') +
       iaBtn('koral', IA_INTRO + 'Interroge-moi à l\'oral, une question à la fois, pour préparer mon contrôle « ' + c.titre + ' » (' + matLabel(c.mat) + '). ' + (c.consignes ? 'Programme : ' + c.consignes + '. ' : '') + 'Corrige chaque réponse avec bienveillance avant de passer à la suivante, et termine par un bilan de ce que je dois revoir.' + ((c.texte || '').length < 4000 && c.texte ? '\nMon cours :\n' + c.texte : ''), 'Interroge-moi (IA)') + '</div>' : '') +
     '<h2>1. Mes documents de révision</h2><div class="card"><div class="filters"><label style="flex:1;min-width:260px">Chapitres et consignes du professeur<input id="kC" value="' + esc(c.consignes || '') + '" placeholder="ex. chapitres 3 et 4, savoir calculer un masque"></label></div>' +
       '<label class="small muted" for="kX">Contenu du cours (colle ton cours ici, ou importe des fichiers .txt / .md)</label><textarea id="kX" class="big" placeholder="Colle ici le texte de ton cours, de tes fiches, de tes exercices…">' + esc(c.texte || '') + '</textarea>' +
       '<div class="row" style="margin-top:.6rem"><button class="btn ghost" data-a="ksave" data-id="' + c.id + '">Enregistrer</button><label class="btn ghost" style="cursor:pointer">Importer des fichiers texte<input type="file" id="kF" accept=".txt,.md,.csv,.html,.htm" multiple hidden></label><span class="small muted" id="kmsg">' + (c.texte ? c.texte.length.toLocaleString('fr-FR') + ' caractères enregistrés' : '') + '</span></div>' +
       '<p class="small muted">Tes cours sont en <b>PDF ou en photos</b> ? Pas besoin de les recopier : laisse ce champ vide et joins les fichiers directement dans ChatGPT ou Claude à l\'étape 2.</p></div>' +
-    '<h2>2. Créer un dossier de révision avec l\'IA</h2><div class="card"><div class="filters"><label>Flashcards<select id="kNc">' + [10, 15, 20, 30].map(function (x) { return '<option' + (x === o.nc ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' +
+    '<h2>2. Demander à l\'IA</h2><div class="card"><div class="filters"><label style="flex:1;min-width:240px">Ce que l\'IA doit créer<select id="kMode">' + CTRL_MODES.map(function (m) { return '<option value="' + m[0] + '"' + (m[0] === o.mode ? ' selected' : '') + '>' + m[1] + '</option>'; }).join('') + '</select></label>' +
+      (o.mode === 'dossier' ? '<label>Flashcards<select id="kNc">' + [10, 15, 20, 30].map(function (x) { return '<option' + (x === o.nc ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' : '') +
       '<label>Questions<select id="kNq">' + [4, 6, 10].map(function (x) { return '<option' + (x === o.nq ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' +
-      '<label>Niveau<select id="kNv">' + ['facile (pour commencer)', 'contrôle (comme en classe)', 'difficile (pour viser 20)'].map(function (x) { return '<option' + (x === o.niveau ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' +
+      (o.mode !== 'bts' ? '<label>Niveau<select id="kNv">' + ['facile (pour commencer)', 'contrôle (comme en classe)', 'difficile (pour viser 20)'].map(function (x) { return '<option' + (x === o.niveau ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' : '') +
       '<button class="btn ia" data-a="kia" data-id="' + c.id + '">✦ Ouvrir ' + (S.ia === 'claude' ? 'Claude' : 'ChatGPT') + ' avec la demande</button></div>' +
-      '<p class="small muted">La demande est copiée : si elle n\'apparaît pas toute seule, colle-la (Ctrl+V), ajoute tes PDF ou photos si besoin, et envoie. L\'IA répond par un bloc de texte qui commence par { : copie-le en entier.</p></div>' +
+      '<p class="small">' + aide + '</p><p class="small muted">La demande est copiée : si elle n\'apparaît pas toute seule, colle-la (Ctrl+V), ajoute tes PDF ou photos si besoin, et envoie. L\'IA répond par un bloc de code qui commence par { : copie-le avec le bouton « Copier » en haut du bloc.</p></div>' +
     '<h2>3. Coller la réponse de l\'IA</h2><div class="card"><textarea id="kR" placeholder="Colle ici la réponse complète de l\'IA (le bloc qui commence par { et finit par })"></textarea>' +
       '<div class="row" style="margin-top:.6rem"><button class="btn" data-a="kimp" data-id="' + c.id + '">Ajouter ce dossier</button><span class="small" id="kerr"></span></div></div>' +
     ((c.dossiers || []).length ? '<h2>Mes dossiers de révision</h2>' + c.dossiers.slice().reverse().map(function (d) {
-      return '<details class="card dossier"' + (d.n === c.dossiers.length ? ' open' : '') + '><summary><b>Dossier ' + d.n + '</b> <span class="muted small">· ' + new Date(d.d).toLocaleDateString('fr-FR') + ' · ' + d.cards.length + ' flashcards · ' + d.qs.length + ' questions</span></summary>' +
-        (d.fiche ? '<div class="fiche">' + miniMd(d.fiche) + '</div>' : '') +
-        '<div class="row"><button class="btn ghost small" data-a="kdeld" data-id="' + c.id + '" data-n="' + d.n + '">Supprimer ce dossier</button></div></details>';
+      var bts = d.type === 'bts';
+      return '<details class="card dossier"' + (d.n === c.dossiers[c.dossiers.length - 1].n ? ' open' : '') + '><summary><b>' + (bts ? 'Sujet type BTS ' : 'Dossier ') + d.n + '</b> <span class="muted small">· ' + new Date(d.d).toLocaleDateString('fr-FR') + (bts ? '' : ' · ' + d.cards.length + ' flashcards') + ' · ' + d.qs.length + ' questions</span></summary>' +
+        (d.fiche ? (bts ? '<details class="more"><summary>Lire le sujet (contexte et documents)</summary><div class="fiche">' + miniMd(d.fiche) + '</div></details>' : '<div class="fiche">' + miniMd(d.fiche) + '</div>') : '') +
+        '<div class="row">' + (bts && d.qs.length ? '<button class="btn" data-a="kexam" data-sid="K_' + c.id + '#' + d.n + '">En examen blanc (chrono, corrigé à la fin)</button>' : '') + '<button class="btn ghost small" data-a="kdeld" data-id="' + c.id + '" data-n="' + d.n + '">Supprimer</button></div></details>';
     }).join('') : '');
 };
 
@@ -1037,13 +1145,13 @@ function objectifDuJour() {
   var obj = [['flash', 'flashcards', Math.max(5, Math.min(due || 10, serre ? 40 : 20)), '#flash'], ['q', 'questions d\'études de cas', serre ? 8 : 4, '#cas']];
   if (oralMats().length) obj.push(['oral', 'questions d\'oral', serre ? 4 : 2, '#oral']);
   var nm = notesMatieres(), faible = Object.keys(nm).map(function (m) { return nm[m]; }).filter(function (x) { return x.note != null; }).sort(function (a, b) { return (1 - b.note) * EPREUVES[b.ep][2] - (1 - a.note) * EPREUVES[a.ep][2]; })[0];
-  var ctrls = (S.ctrl || []).filter(function (c) { var d = joursAvant(c.date); return d != null && d >= 0 && d <= 7; });
+  var ctrls = (S.ctrl || []).filter(function (c) { var d = daysUntil(c.date); return d != null && d >= 0 && d <= 7; });
   var errs = questionsErreurs().length;
   return '<div class="card today"><div class="row sp"><h2 style="margin:0">Mon objectif du jour</h2><span class="small muted">' + (j != null ? (j > 0 ? 'J-' + j + ' avant l\'examen' + (serre ? ' : on accélère' : '') : j === 0 ? 'C’est le jour J' : 'examen passé') : '<a href="#suivi">Indique la date de ton examen</a> pour un objectif adapté') + '</span></div>' +
     '<div class="goals">' + obj.map(function (o) { var v = S.day[o[0]] || 0, ok = v >= o[2]; return '<a class="goal' + (ok ? ' ok' : '') + '" href="' + o[3] + '"><b>' + Math.min(v, o[2]) + ' / ' + o[2] + '</b><span>' + o[1] + (ok ? ' ✓' : '') + '</span><div class="bar"><i style="width:' + Math.min(100, v / o[2] * 100) + '%"></i></div></a>'; }).join('') + '</div>' +
     '<ul class="small todo"><li><a href="#planning">Voir mon planning jusqu\'à l\'examen</a></li>' + (faible ? '<li>Matière prioritaire : <b>' + esc(MATIERES[faible.m][0]) + '</b> (' + sur20(faible.note) + '/20) — <a href="#notes">voir mes notes</a></li>' : '') +
     (errs ? '<li><a href="#erreurs">' + errs + ' question(s) dans ton carnet d\'erreurs</a></li>' : '') +
-    ctrls.map(function (c) { var d = joursAvant(c.date); return '<li>Contrôle <a href="#controles/' + c.id + '">' + esc(c.titre) + '</a> ' + (d ? 'dans ' + d + ' jour' + (d > 1 ? 's' : '') : 'aujourd\'hui') + '</li>'; }).join('') + '</ul></div>';
+    ctrls.map(function (c) { var d = daysUntil(c.date); return '<li>Contrôle <a href="#controles/' + c.id + '">' + esc(c.titre) + '</a> ' + (d ? 'dans ' + d + ' jour' + (d > 1 ? 's' : '') : 'aujourd\'hui') + '</li>'; }).join('') + '</ul></div>';
 }
 
 /* — Révision express : 10 minutes, 3 étapes (5 flashcards, 2 questions, 1 question d'oral) — */
@@ -1068,7 +1176,7 @@ V.express = function () {
   ];
   if (!oralMats().length) steps.pop();
   var all = steps.every(function (s, i) { return done[i]; });
-  return pageHead('Révision express', 'Dix minutes pour avancer quand tu as un petit moment : trois étapes courtes, dans l\'ordre.') +
+  return '<p><a href="#seance">← Séances guidées</a></p>' + pageHead('Révision express', 'Dix minutes pour avancer quand tu as un petit moment : trois étapes courtes, dans l\'ordre.') +
     (all ? '<div class="verdict good"><b>Révision express terminée, bravo ! Chaque petite séance compte.</b></div>' : '') +
     '<div class="steps-x">' + steps.map(function (s, i) {
       return '<div class="card step' + (done[i] ? ' ok' : '') + '"><div class="num">' + (done[i] ? '✓' : i + 1) + '</div><div class="grow"><b>' + s[0] + '</b><p class="small muted">' + s[1] + '</p></div>' + (done[i] ? '<span class="tag good">Fait</span>' : s[2]) + '</div>';
@@ -1123,13 +1231,13 @@ function courbe(pts) {
 /* — Partage d'un contrôle avec la classe : fichier .json exporté / importé — */
 function ctrlExport(c) {
   var data = { type: 'bts-sio-controle', version: 1, controle: { titre: c.titre, mat: c.mat, date: c.date, consignes: c.consignes, texte: c.texte, dossiers: c.dossiers } };
-  download('controle-' + c.titre.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.json', JSON.stringify(data, null, 1), 'application/json');
+  download('controle-' + slug(c.titre) + '.json', JSON.stringify(data, null, 1), 'application/json');
 }
 function ctrlImport(txt) {
   var d = JSON.parse(txt);
   if (!d || d.type !== 'bts-sio-controle' || !d.controle || !d.controle.titre) throw new Error('ce fichier n\'est pas un contrôle partagé par l\'application.');
   var k = d.controle, c = { id: 'c' + Date.now().toString(36), titre: String(k.titre), mat: Object.prototype.hasOwnProperty.call(MATIERES, k.mat) ? k.mat : 'autre', date: k.date || '', consignes: k.consignes || '', texte: k.texte || '', fs: { ok: 0, ko: 0 },
-    dossiers: (k.dossiers || []).map(function (x, i) { var parsed = parseDossier(JSON.stringify({ fiche: x.fiche || ' ', flashcards: x.cards || [], questions: x.qs || [] })); return { n: i + 1, d: x.d || Date.now(), fiche: parsed.fiche, cards: parsed.cards, qs: parsed.qs }; }) };
+    dossiers: (k.dossiers || []).map(function (x, i) { var parsed = parseDossier(JSON.stringify({ fiche: x.fiche || ' ', flashcards: x.cards || [], questions: x.qs || [] }), true); return { n: i + 1, d: x.d || Date.now(), type: x.type === 'bts' ? 'bts' : '', fiche: parsed.fiche, cards: parsed.cards, qs: parsed.qs }; }) };
   readState(Object.assign({}, S, { ctrl: S.ctrl.concat([c]) })); S.ctrl.push(c); buildCtrl();
   if (!save()) { S.ctrl.pop(); buildCtrl(); throw new Error('mémoire du navigateur pleine.'); }
   return c;
@@ -1209,8 +1317,8 @@ V.exos = function () {
       : '<div class="row"><button class="btn" data-a="xcheck">Vérifier</button><button class="btn ghost" data-a="xnew">Un autre</button></div>') + '</div>';
 };
 
-/* — QCM rapide : 10 questions tirées des notions (ou des sigles), 4 propositions — */
-var qcm = null;
+/* — Questions à choix multiples : 10 questions tirées des notions d'une épreuve (ou des sigles), 4 propositions.
+   Jouées dans le Quiz chrono, avec ou sans compte à rebours (l'ancien « QCM rapide » est le mode « Sans chrono »). */
 function qcmBuild(src) {
   var items = [];
   if (src === 'sigles') {
@@ -1226,22 +1334,346 @@ function qcmBuild(src) {
       items.push({ q: n.q, ok: n.a, opts: shuffle([n.a].concat(faux)), ex: EXP[n.id] ? EXP[n.id][0] : '', n: n });
     });
   }
-  return { src: src, items: items, i: 0, rep: null, score: 0 };
+  return { items: items };
 }
-V.qcm = function (src) {
-  var eps = Object.keys(EPREUVES).filter(function (e) { return matsOf(e).length; });
-  if (src && (src === 'sigles' || eps.indexOf(src) >= 0) && (!qcm || qcm.src !== src)) qcm = qcmBuild(src);
-  var head = pageHead('QCM rapide', '10 questions, 4 propositions, correction immédiate. Les bonnes et mauvaises réponses comptent dans tes flashcards et ton carnet d\'erreurs.') +
-    '<div class="chips">' + eps.map(function (e) { return '<a class="chip' + (qcm && qcm.src === e ? ' on' : '') + '" href="#qcm/' + e + '">' + EP_COURT[e] + '</a>'; }).join('') + '<a class="chip' + (qcm && qcm.src === 'sigles' ? ' on' : '') + '" href="#qcm/sigles">Sigles</a></div>';
-  if (!qcm) return head + '<div class="card"><p class="muted">Choisis une épreuve (ou « Sigles ») pour commencer.</p></div>';
-  if (qcm.i >= qcm.items.length) return head + '<div class="verdict ' + (qcm.score >= 7 ? 'good' : qcm.score >= 5 ? 'mid' : 'bad') + '"><div class="note20">' + qcm.score + ' / ' + qcm.items.length + '</div><b>' + (qcm.score >= 7 ? 'Très bien !' : qcm.score >= 5 ? 'Pas mal, encore un petit effort.' : 'Les réponses ratées sont dans ton carnet d\'erreurs : tu vas progresser vite.') + '</b></div><button class="btn" data-a="qagain">Nouveau QCM</button>';
-  var it = qcm.items[qcm.i];
-  return head + '<div class="narrow"><div class="row sp fmeta"><span class="small muted">Question ' + (qcm.i + 1) + ' sur ' + qcm.items.length + '</span><span class="small muted">Score : ' + qcm.score + '</span></div><div class="bar"><i style="width:' + qcm.i / qcm.items.length * 100 + '%"></i></div>' +
-    '<div class="card qcmc"><p class="qtext">' + esc(it.q) + '</p><div class="opts">' + it.opts.map(function (o, k) {
-      var cls = qcm.rep == null ? '' : o === it.ok ? ' good' : k === qcm.rep ? ' bad' : ' dim';
-      return '<button class="opt' + cls + '" data-a="qrep" data-v="' + k + '"' + (qcm.rep != null ? ' disabled' : '') + '><span class="ol">' + 'ABCD'[k] + '</span>' + esc(o) + '</button>';
+
+/* — Quiz chrono (façon Kahoot) : QCM contre la montre, points selon la rapidité, bonus de série.
+   kh = { key, src, arg, lim (secondes), phase: 'ready' | 'q' (on répond) | 'r' (réponse affichée) | 'end', items, i, t0, rep, score, ok, streak, gain } */
+var kh = null;
+var KH_COL = ['kr', 'kb', 'ky', 'kg'];
+function khSources() {
+  var eps = Object.keys(EPREUVES).filter(function (e) { return matsOf(e).length; }).map(function (e) { return [e, EP_COURT[e]]; });
+  return (S.quiz || []).filter(function (z) { return z.qs.some(quizPlayable); }).map(function (z) { return ['quiz/' + z.id, 'Quiz : ' + (z.titre || 'sans titre')]; }).concat(eps, [['sigles', 'Sigles']], (S.ctrl || []).filter(function (c) { return ctrlCards(c).length >= 4; }).map(function (c) { return ['ctrl/' + c.id, 'Contrôle : ' + c.titre]; }));
+}
+function khItems(k) {
+  if (k.indexOf('quiz/') === 0) { var z = quizById(k.slice(5)); return z ? quizItems(z) : []; }
+  if (k.indexOf('ctrl/') !== 0) return qcmBuild(k).items;
+  var c = ctrlById(k.slice(5)), pool = c ? ctrlCards(c) : [];
+  return shuffle(pool).slice(0, 10).map(function (n) {
+    var faux = shuffle(pool.filter(function (m) { return m !== n && m.a !== n.a; })).slice(0, 3).map(function (m) { return m.a; });
+    return { q: n.q, ok: n.a, opts: shuffle([n.a].concat(faux)), ex: n.ex[0], n: n };
+  });
+}
+/* Temps de la question en cours (secondes) : celui fixé dans « Mes quiz » pour cette question, sinon celui choisi pour la partie. g = kh ou mp.
+   En solo, kh.lim = 0 veut dire « Sans chrono » : pas de compte à rebours, et pas de record (les points ne dépendent plus de la vitesse). */
+function qLim(g) { var it = g.items && g.items[g.i]; return (it && it.lim) || g.lim; }
+function khReste() { return kh.lim ? kh.t0 + qLim(kh) * 1000 - Date.now() : Infinity; }
+V.chrono = function (src, arg) {
+  var L = khSources(), key = (src === 'ctrl' || src === 'quiz') && arg ? src + '/' + arg : src;
+  if (key && L.some(function (x) { return x[0] === key; }) && (!kh || kh.key !== key)) kh = { key: key, lim: kh ? kh.lim : 20, phase: 'ready' };
+  if (kh && !L.some(function (x) { return x[0] === kh.key; })) kh = null;
+  var best = kh && (S.kbest || {})[kh.key];
+  var head = pageHead('Quiz chrono', 'Des questions à choix multiples, comme un Kahoot : 10 questions (ou toutes celles de ton quiz), 4 réponses de couleur et un compte à rebours. Plus tu réponds vite, plus tu gagnes de points, et chaque bonne réponse d\'affilée ajoute un bonus de série. Tu préfères prendre ton temps ? Choisis « Sans chrono ». Touches 1 à 4 au clavier ; les erreurs vont dans ton carnet d\'erreurs.');
+  head += '<div class="row" style="margin-bottom:1rem"><a class="btn ghost small" href="#quiz">Mes quiz (écrire mes questions)</a><a class="btn ghost small" href="#animer">' + (mp && mp.host ? 'Revenir à ma partie à plusieurs' : 'Jouer à plusieurs (animer une partie)') + '</a><a class="btn ghost small" href="#rejoindre">' + (mp && !mp.host ? 'Revenir à la partie' : 'Rejoindre une partie') + '</a></div>';
+  var chips = '<div class="chips">' + L.map(function (x) { return '<a class="chip' + (kh && kh.key === x[0] ? ' on' : '') + '" href="#chrono/' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '</div>';
+  if (!kh) return head + chips + '<div class="card"><p class="muted">Choisis une épreuve, les sigles ou un de tes contrôles (il faut au moins 4 flashcards) pour lancer une partie.</p></div>';
+  if (kh.phase === 'ready') return head + chips + '<div class="card kready"><p class="kbig">Prêt ?</p><p class="muted">' + esc(L.filter(function (x) { return x[0] === kh.key; })[0][1]) + (best ? ' · ton record : <b>' + best + ' points</b>' : '') + '</p>' +
+    '<div class="row" style="justify-content:center"><label class="small muted">Temps par question <select id="khLim">' + [10, 20, 30, 0].map(function (s) { return '<option value="' + s + '"' + (s === kh.lim ? ' selected' : '') + '>' + (s ? s + ' s' : 'Sans chrono') + '</option>'; }).join('') + '</select></label><button class="btn big" data-a="khstart">C\'est parti !</button></div></div>';
+  if (kh.phase === 'end') {
+    var n = kh.items.length, record = kh.record;
+    return head + chips + '<div class="card kready"><p class="small muted">Score final</p><p class="kbig">' + (kh.lim ? kh.score + ' points' : kh.ok + ' / ' + n) + '</p><p><b>' + kh.ok + ' / ' + n + '</b> bonnes réponses · meilleure série : ' + kh.maxStreak + (kh.lim ? '' : ' · sans chrono') + '</p>' +
+      (record ? '<p class="tag good">Nouveau record !</p>' : best ? '<p class="small muted">Ton record : ' + best + ' points</p>' : '') +
+      (kh.ok < n ? '<p class="small muted">Les questions ratées sont ajoutées à ton carnet d\'erreurs.</p>' : '') +
+      '<div class="row" style="justify-content:center"><button class="btn big" data-a="khstart">Rejouer</button></div></div>';
+  }
+  var it = kh.items[kh.i], q = kh.phase === 'q', r = q ? khReste() : 0;
+  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (kh.i + 1) + ' / ' + kh.items.length + '</span><span class="kscore">' + kh.score + ' pts' + (kh.streak > 1 ? ' · série ' + kh.streak : '') + '</span></div>' +
+    (kh.lim ? '<div class="kbar"><i' + (q ? ' style="animation-duration:' + qLim(kh) * 1000 + 'ms;animation-delay:' + (r - qLim(kh) * 1000) + 'ms"' : ' style="width:0"') + '></i></div>'
+      : '<div class="bar" style="margin:.3rem 0 .9rem"><i style="width:' + (kh.i + (q ? 0 : 1)) / kh.items.length * 100 + '%"></i></div>') +
+    '<div class="card kq' + (kh.lim ? '' : ' free') + '"><p class="qtext">' + esc(it.q) + '</p>' + (q && kh.lim ? '<span class="knum" id="khnum">' + Math.ceil(r / 1000) + '</span>' : '') + '</div>' +
+    '<div class="kopts">' + it.opts.map(function (o, k) {
+      var cls = q ? '' : o === it.ok ? ' good' : k === kh.rep ? ' bad' : ' dim';
+      return '<button class="kopt ' + KH_COL[k] + cls + '" data-a="khrep" data-v="' + k + '"' + (q ? '' : ' disabled') + '><span class="ol">' + (k + 1) + '</span><span>' + esc(o) + '</span>' + (!q && o === it.ok ? '<span class="kmark">✓</span>' : '') + '</button>';
     }).join('') + '</div>' +
-    (qcm.rep != null ? (it.ex ? '<div class="corr small"><b>' + (it.opts[qcm.rep] === it.ok ? 'Exact !' : 'Pas tout à fait.') + '</b> ' + esc(it.ex) + '</div>' : '') + (it.n && EXP[it.n.id] && EXP[it.n.id][1] ? '<div class="exbox small"><span class="elab">Exemple</span><p>' + esc(EXP[it.n.id][1]) + '</p></div>' : '') + '<div class="row"><button class="btn" data-a="qnext">' + (qcm.i + 1 < qcm.items.length ? 'Question suivante' : 'Voir mon score') + '</button></div>' : '') + '</div></div>';
+    (!q ? '<div class="verdict kverdict ' + (kh.rep >= 0 && it.opts[kh.rep] === it.ok ? 'good' : 'bad') + '"><b>' + (kh.rep < 0 ? 'Temps écoulé !' : it.opts[kh.rep] === it.ok ? 'Bonne réponse : +' + kh.gain + ' points' + (kh.streak > 1 ? ' (série de ' + kh.streak + ')' : '') : 'Raté !') + '</b>' + (it.ex ? '<p class="small" style="margin:.3rem 0 0">' + esc(it.ex) + '</p>' : '') + '</div>' +
+      (it.n && EXP[it.n.id] && EXP[it.n.id][1] ? '<div class="exbox small"><span class="elab">Exemple</span><p>' + esc(EXP[it.n.id][1]) + '</p></div>' : '') : '') +
+    (!q ? '<div class="row" style="justify-content:flex-end;margin-top:1rem"><button class="btn big" data-a="khnext" id="khnext">' + (kh.i + 1 < kh.items.length ? 'Question suivante' : 'Voir mon score') + '</button></div>' : '') + '</div>';
+};
+
+/* — Mes quiz : questions écrites à la main (ou par l'IA) pour le quiz chrono, jouées dans l'ordre, en solo ou à plusieurs.
+   Une question a toujours 4 cases de réponse ; les cases vides ne sont pas proposées (2 réponses minimum, ex. vrai/faux). */
+var QZ_MAX = 100, QZ_LIMS = [0, 10, 20, 30, 60];
+function quizById(id) { return (S.quiz || []).filter(function (z) { return z.id === id; })[0]; }
+function quizQ(x) {
+  x = x && typeof x === 'object' ? x : {};
+  var opts = (Array.isArray(x.opts) ? x.opts : Array.isArray(x.reponses) ? x.reponses : []).slice(0, 4).map(function (o) { return String(o == null ? '' : o).slice(0, 150); });
+  while (opts.length < 4) opts.push('');
+  var b = x.ok != null ? x.ok : x.bonne, ok = typeof b === 'string' && isNaN(+b) ? opts.indexOf(b) : Math.round(+b);
+  var txt = function (v, n) { return String(v || '').replace(/\*\*(.+?)\*\*/g, '$1').slice(0, n); };   // l'IA met parfois du **gras** Markdown
+  return { q: txt(x.q, 400), opts: opts, ok: ok >= 0 && ok < 4 ? ok : 0, ex: txt(x.ex || x.explication, 500), lim: QZ_LIMS.indexOf(+x.lim) > 0 ? +x.lim : 0 };
+}
+function quizPlayable(x) { return !!(x.q.trim() && x.opts[x.ok].trim() && x.opts.filter(function (o) { return o.trim(); }).length >= 2); }
+function quizItems(z) {
+  return z.qs.filter(quizPlayable).map(function (x) { return { q: x.q, ok: x.opts[x.ok], opts: x.opts.filter(function (o) { return o.trim(); }), ex: x.ex, lim: x.lim }; });
+}
+function quizPrompt(z, sujet, n) {
+  var deja = z.qs.filter(quizPlayable).map(function (x) { return '- ' + x.q; });
+  return IA_INTRO + 'Je prépare un quiz chrono (façon Kahoot) pour réviser : « ' + z.titre + ' ».' +
+    (sujet ? '\nSujet ou cours à utiliser :\n"""\n' + sujet + '\n"""' : '\nMes documents de cours sont joints à ce message : base-toi uniquement sur eux.') +
+    '\n\nÉcris ' + n + ' questions à choix multiples courtes (lisibles en quelques secondes). Chacune a 4 réponses courtes (moins de 80 caractères), une seule correcte, et des mauvaises réponses plausibles. Varie la position de la bonne réponse.' +
+    (deja.length ? ' Ne reprends pas ces questions déjà dans le quiz :\n' + deja.slice(0, 60).join('\n') : '') +
+    '\n\nRéponds UNIQUEMENT avec un objet JSON valide, placé dans un seul bloc de code ```json (pour que je puisse le copier avec le bouton « Copier » du bloc), sans texte avant ou après, exactement au format :\n' +
+    '{"questions": [{"q": "question", "reponses": ["réponse 1", "réponse 2", "réponse 3", "réponse 4"], "bonne": 0, "explication": "pourquoi c\'est la bonne réponse, en une phrase"}]}\n' +
+    '« bonne » est le numéro de la bonne réponse : 0 pour la première, 3 pour la dernière.';
+}
+function parseQuiz(txt) {
+  var d = lireJsonIA(txt, true), L = Array.isArray(d) ? d : d && Array.isArray(d.questions) ? d.questions : null;
+  if (!L) throw new Error('le JSON doit contenir une liste « questions ».');
+  var qs = L.map(quizQ).filter(quizPlayable);
+  if (!qs.length) throw new Error('aucune question complète (une question, au moins 2 réponses et la bonne réponse).');
+  return qs;
+}
+function quizExport(z) {
+  download('quiz-' + slug(z.titre) + '.json',
+    JSON.stringify({ type: 'bts-sio-quiz', version: 1, quiz: { titre: z.titre, qs: z.qs } }, null, 1), 'application/json');
+}
+function quizImport(txt) {
+  var d = JSON.parse(txt);
+  if (!d || d.type !== 'bts-sio-quiz' || !d.quiz || !Array.isArray(d.quiz.qs)) throw new Error('ce fichier n\'est pas un quiz partagé par l\'application.');
+  var z = { id: 'z' + Date.now().toString(36), titre: String(d.quiz.titre || 'Quiz importé').slice(0, 80), qs: d.quiz.qs.slice(0, QZ_MAX).map(quizQ) };
+  S.quiz.push(z);
+  if (!save()) { S.quiz.pop(); throw new Error('mémoire du navigateur pleine.'); }
+  return z;
+}
+/* Saisie dans l'éditeur : on met à jour le quiz au fil de la frappe (sans réafficher la page) et on enregistre peu après. */
+function quizField(t) {
+  var z = quizById(location.hash.split('/')[1]); if (!z) return;
+  var f = t.dataset.f, x = z.qs[+t.dataset.qi];
+  if (f === 'titre') z.titre = t.value.slice(0, 80);
+  else if (!x) return;
+  else if (f === 'q') x.q = t.value.slice(0, 400);
+  else if (f === 'o') x.opts[+t.dataset.k] = t.value.slice(0, 150);
+  else if (f === 'ok') { if (t.checked) x.ok = +t.value; }
+  else if (f === 'ex') x.ex = t.value.slice(0, 500);
+  else if (f === 'lim') x.lim = QZ_LIMS.indexOf(+t.value) >= 0 ? +t.value : 0;
+  if (x) { var card = t.closest('.zq'), tag = card && card.querySelector('.zinc'); if (tag) tag.hidden = quizPlayable(x); }
+  memoBox.pending = true; clearTimeout(quizField.t); quizField.t = setTimeout(save, 500);
+}
+V.quiz = function (id) {
+  var z = id && quizById(id);
+  if (!z) {
+    return pageHead('Mes quiz', 'Écris tes propres questions (ou fais-les écrire par l\'IA), puis joue-les dans le quiz chrono, seul ou à plusieurs. Les questions sont posées dans l\'ordre, toutes.') +
+      '<div class="card"><div class="filters"><label style="flex:1">Titre du nouveau quiz<input id="zT" maxlength="80" placeholder="ex. Réseaux : VLAN et routage"></label><button class="btn" data-a="zadd">Créer</button></div>' +
+      '<p class="small muted" style="margin:0">Un camarade t\'a envoyé un quiz ? <label class="link">Importer un quiz partagé<input type="file" id="zImp" accept=".json" hidden></label></p></div>' +
+      (S.quiz.length ? '<div class="cols">' + S.quiz.map(function (x) {
+        var n = x.qs.filter(quizPlayable).length, best = (S.kbest || {})['quiz/' + x.id];
+        return '<a class="card tile" href="#quiz/' + x.id + '"><b>' + esc(x.titre || 'Sans titre') + '</b><span>' + n + ' question' + (n > 1 ? 's' : '') + ' prête' + (n > 1 ? 's' : '') + (best ? ' · record ' + best + ' pts' : '') + '</span></a>';
+      }).join('') + '</div>' : '<div class="card"><p class="muted">Aucun quiz pour l\'instant.</p></div>') +
+      '<p><a href="#chrono">← Quiz chrono</a></p>';
+  }
+  var nOk = z.qs.filter(quizPlayable).length, o = V.quiz.o = V.quiz.o || { n: 10 };
+  return '<p><a href="#quiz">← Mes quiz</a></p><h1>Modifier le quiz</h1><div class="filters"><label style="flex:1">Titre<input class="qz" data-f="titre" maxlength="80" value="' + esc(z.titre) + '"></label></div>' +
+    '<div class="row" style="margin-bottom:1rem">' + (nOk ? '<a class="btn" href="#chrono/quiz/' + z.id + '">Jouer seul</a><button class="btn" data-a="zanim" data-id="' + z.id + '">Animer à plusieurs</button>' : '') +
+    '<button class="btn ghost small" data-a="zexp" data-id="' + z.id + '">Partager (fichier)</button><button class="btn ghost small" data-a="zdel" data-id="' + z.id + '">Supprimer le quiz</button><span class="small muted">' + nOk + ' / ' + z.qs.length + ' question(s) prête(s) · enregistrement automatique</span></div>' +
+    '<p class="small muted">Pour chaque question : écris l\'énoncé, au moins 2 réponses, et <b>coche le rond de la bonne réponse</b>. Les cases vides ne sont pas proposées.</p>' +
+    z.qs.map(function (x, i) {
+      return '<div class="card zq"><div class="row sp"><b>Question ' + (i + 1) + ' <span class="tag zinc"' + (quizPlayable(x) ? ' hidden' : '') + '>incomplète</span></b><div class="row">' +
+        '<button class="btn ghost small" data-a="zmove" data-i="' + i + '" data-v="-1"' + (i ? '' : ' disabled') + ' aria-label="Monter la question ' + (i + 1) + '">↑</button><button class="btn ghost small" data-a="zmove" data-i="' + i + '" data-v="1"' + (i < z.qs.length - 1 ? '' : ' disabled') + ' aria-label="Descendre la question ' + (i + 1) + '">↓</button>' +
+        '<button class="btn ghost small" data-a="zqdel" data-i="' + i + '">Supprimer</button></div></div>' +
+        '<textarea class="qz zqt" data-qi="' + i + '" data-f="q" maxlength="400" placeholder="Écris la question" aria-label="Énoncé de la question ' + (i + 1) + '">' + esc(x.q) + '</textarea>' +
+        '<div class="zopts">' + x.opts.map(function (op, k) {
+          return '<div class="zopt ' + KH_COL[k] + '"><input type="radio" class="qz" name="zok' + i + '" data-qi="' + i + '" data-f="ok" value="' + k + '"' + (x.ok === k ? ' checked' : '') + ' aria-label="Réponse ' + (k + 1) + ' est la bonne réponse">' +
+            '<input class="qz" data-qi="' + i + '" data-f="o" data-k="' + k + '" maxlength="150" placeholder="Réponse ' + (k + 1) + (k > 1 ? ' (facultative)' : '') + '" value="' + esc(op) + '" aria-label="Réponse ' + (k + 1) + '"></div>';
+        }).join('') + '</div>' +
+        '<div class="filters" style="margin:.6rem 0 0"><label style="flex:1">Explication affichée après la réponse (facultatif)<input class="qz" data-qi="' + i + '" data-f="ex" maxlength="500" value="' + esc(x.ex) + '"></label>' +
+        '<label>Temps<select class="qz" data-qi="' + i + '" data-f="lim">' + QZ_LIMS.map(function (s) { return '<option value="' + s + '"' + (s === x.lim ? ' selected' : '') + '>' + (s ? s + ' s' : 'celui de la partie') + '</option>'; }).join('') + '</select></label></div></div>';
+    }).join('') +
+    (z.qs.length < QZ_MAX ? '<div class="row" style="margin-bottom:1.5rem"><button class="btn" data-a="zqadd">+ Ajouter une question</button></div>' : '<p class="small muted">Maximum ' + QZ_MAX + ' questions par quiz.</p>') +
+    '<h2>Faire écrire des questions par l\'IA</h2><div class="card"><label class="small muted" for="zSujet">Sujet ou cours (laisse vide si tu joins tes PDF ou photos dans la conversation)</label><textarea id="zSujet" placeholder="ex. le protocole DHCP : étapes DORA, bail, relais DHCP… ou colle ton cours">' + esc(V.quiz.sujet || '') + '</textarea>' +
+      '<div class="row" style="margin-top:.6rem"><label class="small muted">Nombre de questions <select id="zN">' + [5, 10, 15, 20].map(function (n) { return '<option' + (n === o.n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label><button class="btn ia" data-a="zia" data-id="' + z.id + '">✦ Ouvrir ' + (S.ia === 'claude' ? 'Claude' : 'ChatGPT') + ' avec la demande</button></div>' +
+      '<p class="small muted">L\'IA répond par un bloc de code : copie-le avec son bouton « Copier » et colle-le ici. Les questions s\'ajoutent à la fin du quiz, et tu peux ensuite les modifier.</p>' +
+      '<textarea id="zR" placeholder="Colle ici la réponse de l\'IA (le bloc qui commence par {)"></textarea><div class="row" style="margin-top:.6rem"><button class="btn" data-a="ziaimp" data-id="' + z.id + '">Ajouter ces questions</button><span class="small" id="zerr"></span></div></div>';
+};
+
+/* — Quiz chrono à plusieurs, en pair à pair (PeerJS, chargé seulement à l'usage) —
+   L'animateur ouvre #animer : son navigateur sert de « serveur » sous l'identifiant PeerJS btssio-kq-<code>. Les joueurs ouvrent #rejoindre.
+   Le service public de PeerJS ne sert qu'à mettre les navigateurs en relation ; ensuite les messages vont directement de l'un à l'autre.
+   Messages joueur → animateur : { t:'join', name } { t:'a', i, k }
+   Messages animateur → joueur : { t:'ok' } { t:'err', msg } { t:'q', i, n, q, opts, lim } { t:'r', ok, gain, score, rank, nb, bonne, streak } { t:'end', rank, nb, score, top }
+   Seuls des pseudos circulent (pas de nom réel). mp = état de la partie (animateur : host = true ; joueur : host = false). */
+var PEER_SRC = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', PEER_PREFIX = 'btssio-kq-', MP_MAX = 60;
+var mp = null;
+function peerLib(cb) {
+  if (window.Peer) { cb(); return; }
+  var s = document.createElement('script'); s.src = PEER_SRC; s.crossOrigin = 'anonymous';
+  s.onload = function () { cb(window.Peer ? null : new Error('PeerJS introuvable')); };
+  s.onerror = function () { s.remove(); cb(new Error('Impossible de charger PeerJS : il faut être connecté à Internet.')); };
+  document.head.appendChild(s);
+}
+function mpDraw() { if (curRoute === 'animer' || curRoute === 'rejoindre') rerender(); }
+function mpStop() { if (mp && mp.peer) { try { mp.peer.destroy(); } catch (e) {} } mp = null; }
+function mpPlayers() { return Object.keys(mp.players).map(function (id) { return mp.players[id]; }); }
+function mpRank() { return mpPlayers().filter(function (p) { return !p.gone; }).sort(function (a, b) { return b.score - a.score; }); }
+function mpSend(p, m) { try { if (p.conn && p.conn.open) p.conn.send(m); } catch (e) {} }
+
+/* Animateur */
+function mpHost(key, lim) {
+  mpStop();
+  var me = mp = { host: true, key: key, lim: lim, phase: 'conn', players: {}, code: '' };
+  peerLib(function (err) {
+    if (mp !== me) return;
+    if (err) { me.phase = 'fail'; me.err = err.message; mpDraw(); return; }
+    var tries = 0;
+    (function open() {
+      var code = String(100000 + Math.floor(Math.random() * 900000)), peer = new Peer(PEER_PREFIX + code);
+      me.peer = peer;
+      peer.on('open', function () { if (mp !== me) { peer.destroy(); return; } me.code = code; me.phase = 'lobby'; mpDraw(); });
+      peer.on('error', function (e) {
+        if (mp !== me) return;
+        if (e.type === 'unavailable-id' && ++tries < 5) { peer.destroy(); open(); return; }
+        if (me.phase === 'conn') { me.phase = 'fail'; me.err = 'Impossible de créer la partie (' + e.type + '). Vérifie la connexion Internet.'; mpDraw(); }
+      });
+      peer.on('connection', function (conn) { mpHostConn(me, conn); });
+    })();
+  });
+}
+function mpHostConn(me, conn) {
+  conn.on('data', function (m) {
+    if (mp !== me || !m || typeof m !== 'object') return;
+    if (m.t === 'join') {
+      var name = String(m.name || '').replace(/\s+/g, ' ').trim().slice(0, 20), list = mpPlayers();
+      if (!name) { conn.send({ t: 'err', msg: 'Choisis un pseudo.' }); return; }
+      if (me.phase !== 'lobby') { conn.send({ t: 'err', msg: 'La partie a déjà commencé : attends la prochaine.' }); return; }
+      if (list.length >= MP_MAX) { conn.send({ t: 'err', msg: 'La partie est complète.' }); return; }
+      if (list.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); })) { conn.send({ t: 'err', msg: 'Ce pseudo est déjà pris, choisis-en un autre.' }); return; }
+      me.players[conn.peer] = { name: name, conn: conn, score: 0, streak: 0, ans: null };
+      conn.send({ t: 'ok', name: name }); mpDraw();
+    } else if (m.t === 'a') mpAnswer(conn.peer, m);
+  });
+  conn.on('close', function () {
+    if (mp !== me) return; var p = me.players[conn.peer]; if (!p) return;
+    if (me.phase === 'lobby') delete me.players[conn.peer]; else p.gone = true;
+    mpDraw(); mpCheckAll();
+  });
+}
+function mpNextQ() {
+  if (++mp.i >= mp.items.length) { mpEnd(); return; }
+  var it = mp.items[mp.i]; mp.phase = 'q'; mp.t0 = Date.now();
+  mpPlayers().forEach(function (p) { p.ans = null; mpSend(p, { t: 'q', i: mp.i, n: mp.items.length, q: it.q, opts: it.opts, lim: qLim(mp) }); });
+  mpDraw();
+}
+function mpAnswer(id, m) {
+  var p = mp.players[id], it = mp.items && mp.items[mp.i], k = +m.k;
+  if (!p || p.gone || mp.phase !== 'q' || m.i !== mp.i || p.ans || !(k >= 0 && k < it.opts.length)) return;
+  var reste = Math.max(0, mp.t0 + qLim(mp) * 1000 - Date.now()), ok = it.opts[k] === it.ok;
+  p.ans = { k: k, ok: ok, gain: ok ? Math.round(500 + 500 * reste / (qLim(mp) * 1000)) + Math.min(500, p.streak * 100) : 0 };
+  mpDraw(); mpCheckAll();
+}
+function mpCheckAll() { if (mp && mp.host && mp.phase === 'q') { var L = mpPlayers().filter(function (p) { return !p.gone; }); if (L.length && L.every(function (p) { return p.ans; })) mpReveal(); } }
+function mpReveal() {
+  var it = mp.items[mp.i]; mp.phase = 'r';
+  mpPlayers().forEach(function (p) { var a = p.ans; p.score += a ? a.gain : 0; p.streak = a && a.ok ? p.streak + 1 : 0; });
+  var R = mpRank();
+  R.forEach(function (p, i) { mpSend(p, { t: 'r', ok: !!(p.ans && p.ans.ok), rep: !!p.ans, gain: p.ans ? p.ans.gain : 0, score: p.score, rank: i + 1, nb: R.length, bonne: it.ok, streak: p.streak }); });
+  mpDraw();
+}
+function mpEnd() {
+  mp.phase = 'end';
+  var R = mpRank(), top = R.slice(0, 3).map(function (p) { return [p.name, p.score]; });
+  R.forEach(function (p, i) { mpSend(p, { t: 'end', rank: i + 1, nb: R.length, score: p.score, top: top }); });
+  mpDraw();
+}
+function mpTop(R, n) { return '<ol class="mptop">' + R.slice(0, n).map(function (p) { return '<li><span>' + esc(p.name) + '</span><b>' + p.score + '</b></li>'; }).join('') + '</ol>'; }
+V.animer = function () {
+  var head = pageHead('Quiz chrono à plusieurs', 'Tu es l\'animateur : projette cet écran. Chacun rejoint la partie sur son téléphone avec le code, répond avec les couleurs, et le classement s\'affiche après chaque question.');
+  if (!mp || !mp.host) {
+    var L = khSources();
+    return head + '<div class="card"><div class="filters"><label>Questions<select id="mpSrc">' + L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + ((V.animer.pre ? V.animer.pre === x[0] : kh && kh.key === x[0]) ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Temps par question<select id="mpLim">' + [10, 20, 30].map(function (s) { return '<option value="' + s + '"' + (s === 20 ? ' selected' : '') + '>' + s + ' s</option>'; }).join('') + '</select></label><button class="btn" data-a="mphost">Créer la partie</button></div>' +
+      '<p class="small muted" style="margin:0">La connexion se fait en pair à pair (PeerJS) : il faut Internet, et certains wifi d\'établissement la bloquent. Si un joueur n\'arrive pas à se connecter, essaie la 4G.</p></div>' +
+      '<p><a href="#chrono">← Jouer seul</a> · <a href="#rejoindre">Je suis joueur : rejoindre une partie</a></p>';
+  }
+  var quit = '<button class="btn ghost small" data-a="mpquit">Terminer la partie</button>';
+  if (mp.phase === 'conn') return head + '<div class="card kready"><p class="kbig">Création…</p><p class="muted">Connexion au service PeerJS.</p>' + quit + '</div>';
+  if (mp.phase === 'fail') return head + '<div class="verdict bad"><b>' + esc(mp.err) + '</b></div><button class="btn" data-a="mpquit">Retour</button>';
+  var P = mpPlayers().filter(function (p) { return !p.gone; });
+  if (mp.phase === 'lobby') {
+    var url = location.protocol === 'file:' ? '' : location.origin + location.pathname + '#rejoindre/' + mp.code;
+    return head + '<div class="card kready"><p class="small muted">Code de la partie</p><p class="mpcode">' + mp.code.slice(0, 3) + ' ' + mp.code.slice(3) + '</p>' +
+      '<p class="muted">Sur ton téléphone : ouvre l\'application, menu « Quiz chrono », puis « Rejoindre une partie »' + (url ? ', ou va sur <b>' + esc(url) + '</b>' : '') + '.</p>' +
+      '<p><b>' + P.length + '</b> joueur' + (P.length > 1 ? 's' : '') + ' connecté' + (P.length > 1 ? 's' : '') + '</p><div class="mpnames">' + P.map(function (p) { return '<span class="tag acc">' + esc(p.name) + '</span>'; }).join('') + '</div>' +
+      '<div class="row" style="justify-content:center;margin-top:1rem"><button class="btn big" data-a="mpstart"' + (P.length ? '' : ' disabled') + '>Lancer la partie</button>' + quit + '</div></div>';
+  }
+  var it = mp.items[mp.i];
+  if (mp.phase === 'end') {
+    var R = mpRank();
+    return head + '<div class="card kready"><p class="kbig">Podium</p><div class="podium">' + [1, 0, 2].map(function (i) { var p = R[i]; return p ? '<div class="pod p' + (i + 1) + '"><b>' + esc(p.name) + '</b><span>' + p.score + ' pts</span><i>' + (i + 1) + '</i></div>' : ''; }).join('') + '</div>' +
+      (R.length > 3 ? mpTop(R, 60) : '') + '<div class="row" style="justify-content:center;margin-top:1rem">' + quit + '</div></div>';
+  }
+  var q = mp.phase === 'q', nrep = P.filter(function (p) { return p.ans; }).length, r = q ? mp.t0 + qLim(mp) * 1000 - Date.now() : 0;
+  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (mp.i + 1) + ' / ' + mp.items.length + '</span><span class="kscore">' + nrep + ' / ' + P.length + ' réponses</span></div>' +
+    '<div class="kbar"><i' + (q ? ' style="animation-duration:' + qLim(mp) * 1000 + 'ms;animation-delay:' + (r - qLim(mp) * 1000) + 'ms"' : ' style="width:0"') + '></i></div>' +
+    '<div class="card kq"><p class="qtext">' + esc(it.q) + '</p>' + (q ? '<span class="knum" id="mpnum">' + Math.max(0, Math.ceil(r / 1000)) + '</span>' : '') + '</div>' +
+    '<div class="kopts">' + it.opts.map(function (o, k) {
+      var n = P.filter(function (p) { return p.ans && p.ans.k === k; }).length;
+      return '<div class="kopt ' + KH_COL[k] + (q ? '' : o === it.ok ? ' good' : ' dim') + '"><span class="ol">' + (k + 1) + '</span><span>' + esc(o) + '</span>' + (!q ? '<span class="kmark">' + (o === it.ok ? '✓ ' : '') + n + '</span>' : '') + '</div>';
+    }).join('') + '</div>' +
+    (q ? '<div class="row" style="justify-content:flex-end;margin-top:1rem"><button class="btn ghost" data-a="mpreveal">Afficher la réponse</button>' + quit + '</div>'
+      : (it.ex ? '<div class="verdict good kverdict"><p class="small" style="margin:0">' + esc(it.ex) + '</p></div>' : '') + '<h2>Classement</h2>' + mpTop(mpRank(), 5) +
+        '<div class="row" style="justify-content:flex-end;margin-top:1rem"><button class="btn big" data-a="mpnext">' + (mp.i + 1 < mp.items.length ? 'Question suivante' : 'Voir le podium') + '</button>' + quit + '</div>') + '</div>';
+};
+
+/* Joueur */
+function mpJoin(code, name) {
+  mpStop();
+  var me = mp = { host: false, code: code, name: name, phase: 'conn' };
+  setTimeout(function () { if (mp === me && me.phase === 'conn') { me.phase = 'fail'; me.err = 'La connexion ne s\'établit pas : le réseau bloque sans doute le pair à pair. Essaie en 4G ou sur un autre wifi.'; if (me.peer) me.peer.destroy(); mpDraw(); } }, 15000);
+  peerLib(function (err) {
+    if (mp !== me) return;
+    if (err) { me.phase = 'fail'; me.err = err.message; mpDraw(); return; }
+    var peer = me.peer = new Peer();
+    peer.on('open', function () {
+      if (mp !== me) { peer.destroy(); return; }
+      var c = me.conn = peer.connect(PEER_PREFIX + code, { reliable: true });
+      c.on('open', function () { c.send({ t: 'join', name: name }); });
+      c.on('data', function (m) { mpPlayerMsg(me, m); });
+      c.on('close', function () { if (mp === me && me.phase !== 'end' && me.phase !== 'fail') { me.phase = 'fail'; me.err = 'La connexion avec l\'animateur est coupée (partie terminée ou réseau perdu).'; mpDraw(); } });
+    });
+    peer.on('error', function (e) {
+      if (mp !== me || me.phase === 'end') return;
+      me.phase = 'fail'; me.err = e.type === 'peer-unavailable' ? 'Aucune partie avec ce code : vérifie le code affiché par l\'animateur.' : 'Connexion impossible (' + e.type + '). Le réseau bloque peut-être le pair à pair : essaie en 4G ou sur un autre wifi.';
+      mpDraw();
+    });
+  });
+}
+function mpPlayerMsg(me, m) {
+  if (mp !== me || !m || typeof m !== 'object') return;
+  if (m.t === 'ok') me.phase = 'wait';
+  else if (m.t === 'err') { me.phase = 'fail'; me.err = String(m.msg || 'Refusé par l\'animateur.'); if (me.peer) me.peer.destroy(); }
+  else if (m.t === 'q' && Array.isArray(m.opts)) { me.phase = 'q'; me.q = { i: Math.round(+m.i) || 0, n: Math.round(+m.n) || 0, q: String(m.q), opts: m.opts.slice(0, 4).map(String), lim: Math.min(60, Math.max(5, +m.lim || 20)) }; me.t0 = Date.now(); me.rep = null; }
+  else if (m.t === 'r' || m.t === 'end') {
+    var num = function (v) { return Math.max(0, Math.round(+v) || 0); };
+    me.phase = m.t; me.res = { ok: !!m.ok, rep: !!m.rep, gain: num(m.gain), score: num(m.score), rank: num(m.rank), nb: num(m.nb), streak: num(m.streak), bonne: String(m.bonne || ''),
+      top: Array.isArray(m.top) ? m.top.slice(0, 3).filter(Array.isArray).map(function (p) { return [String(p[0]), num(p[1])]; }) : [] };
+  }
+  else return;
+  mpDraw();
+}
+function mpChoose(k) {
+  if (!mp || mp.host || mp.phase !== 'q' || mp.rep != null || Date.now() > mp.t0 + mp.q.lim * 1000) return;
+  mp.rep = k; try { mp.conn.send({ t: 'a', i: mp.q.i, k: k }); } catch (e) {} mpDraw();
+}
+V.rejoindre = function (code) {
+  var head = pageHead('Rejoindre une partie', 'Entre le code affiché par l\'animateur et choisis un pseudo (pas ton nom complet).');
+  if (!mp || mp.host) {
+    var c = (code || '').replace(/\D/g, '').slice(0, 6);
+    return head + '<div class="card narrow"><div class="filters"><label>Code de la partie<input id="mpCode" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="123 456" value="' + esc(c) + '"></label>' +
+      '<label>Pseudo<input id="mpName" maxlength="20" autocomplete="nickname" placeholder="ex. Tom_SISR" value="' + esc(V.rejoindre.pseudo || '') + '"></label><button class="btn" data-a="mpjoin">Rejoindre</button></div>' +
+      (mp && mp.host ? '<p class="small bad-t">Tu animes déjà une partie sur cet appareil : rejoindre la terminera.</p>' : '') + '</div><p><a href="#chrono">← Jouer seul</a></p>';
+  }
+  var quit = '<button class="btn ghost small" data-a="mpquit">Quitter</button>', R = mp.res;
+  if (mp.phase === 'conn') return head + '<div class="card kready"><p class="kbig">Connexion…</p>' + quit + '</div>';
+  if (mp.phase === 'fail') return head + '<div class="verdict bad"><b>' + esc(mp.err) + '</b></div><button class="btn" data-a="mpquit">Réessayer</button>';
+  if (mp.phase === 'wait') return head + '<div class="card kready"><p class="kbig">C\'est bon, ' + esc(mp.name) + ' !</p><p class="muted">Regarde l\'écran de l\'animateur : la partie va commencer.</p>' + quit + '</div>';
+  if (mp.phase === 'end') return head + '<div class="card kready"><p class="small muted">Classement final</p><p class="kbig">' + R.rank + (R.rank === 1 ? 'er' : 'e') + ' sur ' + R.nb + '</p><p><b>' + R.score + ' points</b></p>' +
+    (Array.isArray(R.top) ? '<ol class="mptop">' + R.top.map(function (p) { return '<li><span>' + esc(p[0]) + '</span><b>' + esc(p[1]) + '</b></li>'; }).join('') + '</ol>' : '') + quit + '</div>';
+  if (mp.phase === 'r') return head + '<div class="verdict ' + (R.ok ? 'good' : 'bad') + '"><div class="note20">' + (R.ok ? '+' + R.gain : R.rep ? 'Raté' : 'Trop tard') + '</div><b>' + (R.ok ? (R.streak > 1 ? 'Série de ' + R.streak + ' !' : 'Bonne réponse !') : 'La bonne réponse : ' + esc(R.bonne)) + '</b></div>' +
+    '<div class="card kready"><p class="kbig">' + R.rank + (R.rank === 1 ? 'er' : 'e') + ' / ' + R.nb + '</p><p>' + R.score + ' points</p></div>' + quit;
+  var Q = mp.q, rr = mp.t0 + Q.lim * 1000 - Date.now();
+  return '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (Q.i + 1) + ' / ' + Q.n + '</span><span class="knum sm" id="mpnum">' + Math.max(0, Math.ceil(rr / 1000)) + '</span></div>' +
+    '<div class="card kq"><p class="qtext">' + esc(Q.q) + '</p></div>' +
+    (mp.rep != null ? '<div class="card kready"><p class="kbig">' + (mp.rep < 0 ? 'Temps écoulé' : 'Réponse envoyée') + '</p><p class="muted">Attends le résultat sur l\'écran de l\'animateur…</p></div>' :
+      '<div class="kopts">' + Q.opts.map(function (o, k) { return '<button class="kopt ' + KH_COL[k] + '" data-a="mpa" data-v="' + k + '"><span class="ol">' + (k + 1) + '</span><span>' + esc(o) + '</span></button>'; }).join('') + '</div>') + '</div>';
 };
 
 /* — Glossaire des sigles — */
@@ -1249,7 +1681,7 @@ V.glossaire = function () {
   var f = V.glossaire.f = V.glossaire.f || { q: '', d: '' }, doms = GLOSSAIRE.map(function (g) { return g[3]; }).filter(function (d, i, a) { return a.indexOf(d) === i; }).sort();
   var L = GLOSSAIRE.filter(function (g) { return (!f.d || g[3] === f.d) && (!f.q || norm(g.join(' ')).indexOf(norm(f.q)) >= 0); }).sort(function (a, b) { return a[0].localeCompare(b[0]); });
   return pageHead('Glossaire des sigles', GLOSSAIRE.length + ' sigles du BTS SIO expliqués simplement. À l\'examen, développer un sigle et l\'expliquer en une phrase montre que tu maîtrises le vocabulaire.') +
-    '<div class="row" style="margin-bottom:.8rem"><input id="gq" placeholder="Chercher un sigle ou un mot…" value="' + esc(f.q) + '" style="flex:1;max-width:360px"><a class="btn" href="#qcm/sigles">Quiz des sigles</a></div>' +
+    '<div class="row" style="margin-bottom:.8rem"><input id="gq" placeholder="Chercher un sigle ou un mot…" value="' + esc(f.q) + '" style="flex:1;max-width:360px"><a class="btn" href="#chrono/sigles">Quiz des sigles</a></div>' +
     '<div class="chips">' + [''].concat(doms).map(function (d) { return '<button class="chip' + (f.d === d ? ' on' : '') + '" data-a="gdom" data-v="' + d + '">' + (d || 'Tous') + '</button>'; }).join('') + '</div>' +
     '<div class="gl" id="glist">' + glossList(L) + '</div>';
 };
@@ -1269,7 +1701,7 @@ function calendrier() {
   return '<div class="cal">' + cells + '</div><div class="row sp small muted" style="margin-top:.5rem"><span>' + actifs + ' jour' + (actifs > 1 ? 's' : '') + ' de révision sur les ' + semaines + ' dernières semaines · ' + total + ' activités</span><span class="calk">Moins <i class="c0"></i><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i> Plus</span></div>';
 }
 
-/* — Erreurs fréquentes par matière (data/erreurs.js) — */
+/* — Pièges fréquents par matière (data/erreurs.js) — */
 var ERR = window.ERREURS || {};
 function erreurItem(e) {
   return '<div class="card errf"><div class="row sp"><b>' + esc(e[0]) + '</b>' + (e[3] === 'correcteurs' ? '<span class="tag acc" title="Constat publié par des correcteurs ou une académie">signalé par des correcteurs</span>' : '') + '</div>' +
@@ -1278,7 +1710,7 @@ function erreurItem(e) {
 function erreursDe(m, n) { return (ERR[m] || []).slice(0, n || 99); }
 V.erreursfreq = function () {
   var mats = Object.keys(MATIERES).filter(function (m) { return matOK(m) && ERR[m]; }), m = V.erreursfreq.m = mats.indexOf(V.erreursfreq.m) >= 0 ? V.erreursfreq.m : mats[0];
-  return pageHead('Erreurs fréquentes', 'Les erreurs qui reviennent le plus souvent dans les copies et à l\'oral, matière par matière, avec un exemple faux et un exemple juste. Lis-les avant un entraînement : savoir où les autres se trompent évite de tomber dans le même piège.') +
+  return pageHead('Pièges fréquents', 'Les erreurs qui reviennent le plus souvent dans les copies et à l\'oral, matière par matière, avec un exemple faux et un exemple juste. Lis-les avant un entraînement : savoir où les autres se trompent évite de tomber dans le même piège.') +
     '<div class="chips">' + mats.map(function (x) { return '<button class="chip' + (x === m ? ' on' : '') + '" data-a="errm" data-v="' + x + '">' + esc(MATIERES[x][0].replace(/^E\d · /, '')) + ' <i>' + ERR[x].length + '</i></button>'; }).join('') + '</div>' +
     '<div class="cols">' + erreursDe(m).map(erreurItem).join('') + '</div>' +
     '<p class="small muted">Il n\'existe pas de rapport de jury national publié pour toutes les épreuves : les erreurs marquées « signalé par des correcteurs » viennent de comptes rendus d\'académies ; les autres sont les erreurs classiques relevées dans les corrigés et les méthodes.</p>';
@@ -1309,20 +1741,21 @@ V.python = function () {
     '<li>Les supports de cours d\'algorithmique appliquée insistent sur la <b>justesse</b> de la solution et sur la <b>qualité</b> du code : lisibilité, indentation, commentaires.</li>' +
     '<li>Les dates, la durée et le matériel autorisé dépendent de ton établissement : <b>demande-les à ton professeur</b>.</li></ul>' +
     '<p class="small muted">Sources : documents de session publiés pour le BTS SIO (épreuve E3, coefficient 3, CCF) et supports de cours d\'algorithmique appliquée. Le référentiel officiel fait foi.</p></div>' +
-    '<div class="row"><a class="btn" href="#cas">Sujets d\'entraînement E3</a><a class="btn ghost" href="#methode">Méthode pour le Python</a><a class="btn ghost" href="#erreursfreq">Erreurs fréquentes</a></div>';
+    '<div class="row"><a class="btn" href="#cas">Sujets d\'entraînement E3</a><a class="btn ghost" href="#methode">Méthode pour le Python</a><a class="btn ghost" href="#erreursfreq">Pièges fréquents</a></div>';
+  var pyBtns = '<div class="row" style="margin-top:.7rem"><button class="btn" data-a="pycheck">Vérifier</button><button class="btn ghost" data-a="pynext">Passer</button></div>';
   if (py.tab === 'affiche') {
     var a = PY_AFFICHE[py.i % PY_AFFICHE.length], ok = py.done && pyNormOut(py.rep) === pyNormOut(a[1]);
     return h + '<div class="card pyx"><p class="small muted">Programme ' + (py.i % PY_AFFICHE.length + 1) + ' sur ' + PY_AFFICHE.length + ' · Fais-le tourner à la main (tableau des variables) et écris exactement ce qui s\'affiche.</p><pre class="code">' + esc(a[0]) + '</pre>' +
       '<label class="small muted" for="pyrep">Ce qui s\'affiche (une ligne par print)</label><textarea id="pyrep" class="mono" spellcheck="false"' + (py.done ? ' disabled' : '') + '>' + esc(py.rep || '') + '</textarea>' +
       (py.done ? '<div class="verdict ' + (ok ? 'good' : 'bad') + '"><b>' + (ok ? 'Exact !' : 'Pas tout à fait.') + '</b></div><div class="corr"><b class="small">Affichage attendu</b><pre class="code">' + esc(a[1]) + '</pre><p>' + esc(a[2]) + '</p></div><div class="row"><button class="btn" data-a="pynext">Programme suivant</button></div>'
-        : '<div class="row" style="margin-top:.7rem"><button class="btn" data-a="pycheck">Vérifier</button><button class="btn ghost" data-a="pynext">Passer</button></div>') + '</div>';
+        : pyBtns) + '</div>';
   }
   if (py.tab === 'complete') {
     var c = PY_COMPLETE[py.i % PY_COMPLETE.length], okc = py.done && c[2].map(pyNormCode).indexOf(pyNormCode(py.rep)) >= 0;
     return h + '<div class="card pyx"><p class="small muted">Exercice ' + (py.i % PY_COMPLETE.length + 1) + ' sur ' + PY_COMPLETE.length + '</p><p class="qtext">' + esc(c[0]) + '</p><pre class="code">' + esc(c[1]) + '</pre>' +
       '<label class="small muted" for="pyrep">Ce qui remplace ____</label><input id="pyrep" class="mono" style="width:100%" autocomplete="off" spellcheck="false" value="' + esc(py.rep || '') + '"' + (py.done ? ' disabled' : '') + '>' +
       (py.done ? '<div class="verdict ' + (okc ? 'good' : 'bad') + '"><b>' + (okc ? 'Exact !' : 'Pas tout à fait.') + '</b></div><div class="corr"><b class="small">Réponse attendue</b><pre class="code">' + esc(c[2][0]) + '</pre><p>' + esc(c[3]) + '</p></div><div class="row"><button class="btn" data-a="pynext">Exercice suivant</button></div>'
-        : '<div class="row" style="margin-top:.7rem"><button class="btn" data-a="pycheck">Vérifier</button><button class="btn ghost" data-a="pynext">Passer</button></div>') + '</div>';
+        : pyBtns) + '</div>';
   }
   var e = PY_ECRIRE[py.i % PY_ECRIRE.length], code = py.code[py.i % PY_ECRIRE.length] || '';
   var prompt = IA_INTRO + 'Je m\'entraîne à l\'algorithmique appliquée en Python (épreuve E3). Énoncé : ' + e[0] + '\nTests attendus :\n' + e[1] + '\n\nMon code :\n' + (code || '(je n\'ai rien écrit)') + '\n\nCorrige-moi comme un professeur : dis si mon code passe les tests (en le déroulant à la main), explique les erreurs une par une, puis propose une version corrigée, lisible et commentée. Note-moi sur 20.';
@@ -1512,7 +1945,7 @@ function flashDecks() {
 /* — Pages « matière » (comme la page d'un cours) : thèmes avec progression, entraînement, erreurs, schémas, probables — */
 V.matieres = function () {
   var nm = notesMatieres();
-  return pageHead('Mes matières', 'Choisis une matière : sa page regroupe tout ce qui la concerne (thèmes, flashcards, entraînement, erreurs fréquentes, schémas, thèmes à réviser). C\'est le meilleur point de départ quand tu ne sais pas par où commencer.') +
+  return pageHead('Mes matières', 'Choisis une matière : sa page regroupe tout ce qui la concerne (thèmes, flashcards, entraînement, pièges fréquents, schémas, thèmes à réviser). C\'est le meilleur point de départ quand tu ne sais pas par où commencer.') +
     Object.keys(EPREUVES).map(function (ep) {
       var mats = matsOf(ep); if (!mats.length) return '';
       return '<h2>' + ep + ' · ' + esc(epTitre(ep)) + ' <small class="muted">coef. ' + EPREUVES[ep][2] + '</small></h2><div class="cols mats">' + mats.map(function (m) {
@@ -1530,7 +1963,7 @@ V.matiere = function (m) {
   var ent = ENT.some(function (e) { return e.mat === m; }), an = m === 'sisr' ? 'SISR' : m === 'slam' ? 'SLAM' : m === 'cyber' ? (S.option || 'SISR') : (m === 'eco' || m === 'droit' || m === 'mgmt') ? 'CEJM' : '';
   var train = [];
   if (ent || an) train.push('<button class="btn" data-a="startkind" data-v="' + (ent ? 'mat:' + m : an) + '">Étude de cas</button>');
-  train.push('<a class="btn ghost" href="#qcm/' + ep + '">QCM ' + ep + '</a>');
+  train.push('<a class="btn ghost" href="#chrono/' + ep + '">QCM ' + ep + '</a>');
   if (Object.keys(EXOS).some(function (k) { return !EXOS[k].python && EXOS[k].mats.indexOf(m) >= 0; })) train.push('<a class="btn ghost" href="#exos">Exercices</a>');
   if (m === 'algo' || m === 'maths') train.push('<a class="btn ghost" href="#python">Maths et Python</a>');
   if ((window.ORAL || {})[m]) train.push('<a class="btn ghost" href="#oral">Simulateur d\'oral</a>');
@@ -1546,7 +1979,7 @@ V.matiere = function (m) {
         '<div class="row"><a class="btn small" href="#flash/deck/' + m + '.' + i + '">Flashcards du thème</a><button class="btn ghost small" data-a="readtheme" data-m="' + m + '" data-c="' + esc(c) + '">Lire les fiches</button></div></div>';
     }).join('') + '</div>' +
     '<h2>S\'entraîner</h2><div class="row">' + train.join('') + '</div>' +
-    (ERR[m] ? '<h2>Erreurs fréquentes</h2><div class="cols">' + erreursDe(m, 3).map(erreurItem).join('') + '</div><p class="small"><a href="#erreursfreq" data-a="errm" data-v="' + m + '">Toutes les erreurs fréquentes de la matière</a></p>' : '') +
+    (ERR[m] ? '<h2>Pièges fréquents</h2><div class="cols">' + erreursDe(m, 3).map(erreurItem).join('') + '</div><p class="small"><a href="#erreursfreq" data-a="errm" data-v="' + m + '">Toutes les pièges fréquents de la matière</a></p>' : '') +
     (probs.length ? '<h2>Thèmes à travailler</h2><div class="card"><ul>' + probs.map(function (id) { return '<li><b>' + esc(THEMES[id][0]) + '</b> — <span class="tag ' + (THEME_STATS[id].ratio >= 0.8 ? 'i3' : THEME_STATS[id].ratio >= 0.6 ? 'i2' : '') + '">' + THEME_STATS[id].niveau + '</span><br><span class="small muted">' + esc(THEMES[id][2]) + '</span></li>'; }).join('') + '</ul><a class="small" href="#pronos" data-a="goep" data-v="' + ep + '" data-to="pronos">Tous les thèmes à réviser de l\'' + ep + '</a></div>' : '') +
     (sch.length ? '<h2>Schémas</h2>' + sch.map(function (n) { return '<details class="card more"><summary>' + esc(n.titre) + '</summary>' + schemaHtml(n.id) + '</details>'; }).join('') : '');
 };
@@ -1622,6 +2055,7 @@ V.suivi = function () {
 
 /* ───────── 5) Routeur et actions ───────── */
 function render(keepScroll) {
+  if (/^#qcm(\/|$)/.test(location.hash)) { location.replace('#chrono' + location.hash.slice(4)); return; }   // ancien « QCM rapide », fusionné dans le quiz chrono
   var parts = (location.hash.slice(1) || 'accueil').split('/'), r = Object.prototype.hasOwnProperty.call(V, parts[0]) ? parts[0] : 'accueil';
   if (S.examRun && Date.now() >= S.examRun.start + S.examRun.dur) examRendre();
   if (r !== 'cas' && session && session.fini) session = null;
@@ -1630,7 +2064,8 @@ function render(keepScroll) {
   curRoute = r; renderNav(); markNav();
   if (!keepScroll) { setMenu(false); window.scrollTo(0, 0); if (document.activeElement !== $('#search')) $('#view').focus({ preventScroll: true }); }
   if (study) study.afterRender(r);
-  document.title = ($('#view h1') ? $('#view h1').textContent : 'Accueil') + ' · Révision BTS SIO';
+  var navItem = [].concat.apply([], NAV.map(function (g) { return g[1]; })).filter(function (x) { return x[0] === (NAV_ALIAS[r] || r); })[0];
+  document.title = ($('#view h1') ? $('#view h1').textContent : navItem ? navItem[1] : 'Accueil') + ' · Révision BTS SIO';
 }
 function rerender() { var y = window.scrollY; render(true); window.scrollTo(0, y); }
 function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
@@ -1656,7 +2091,7 @@ function keepRep() { var t = $('#rep'); if (t && session) session.items[session.
 
 var ACT = {
   skip: function () { setMenu(false); $('#view').focus(); },
-  setoption: function (el) { S.option = el.dataset.v; flash = null; qcm = null; oral = null; exo = null; refreshThemeStats(); fixSel(); save(); applyTheme(); render(); },
+  setoption: function (el) { S.option = el.dataset.v; flash = null; kh = null; oral = null; exo = null; refreshThemeStats(); fixSel(); save(); applyTheme(); render(); },
   setep: function (el) { S.ep = el.dataset.v; fixSel(); save(); rerender(); },
   setmat: function (el) { S.mat = el.dataset.v; save(); rerender(); },
   goep: function (el) { S.ep = el.dataset.v; fixSel(); save(); go(el.dataset.to === 'flash' ? '#flash/deck/' + el.dataset.v : '#' + el.dataset.to); },
@@ -1678,14 +2113,14 @@ var ACT = {
   navg: function (el) { navOpen[el.dataset.v] = !isNavOpen(el.dataset.v); renderNav(); markNav(); },
   ia: function (el) { var p = IA_PROMPTS[el.dataset.k]; if (p) iaOpen(p); },
   errq: function () { startSession({ ids: questionsErreurs().map(function (q) { return q.id; }), titre: 'Carnet d\'erreurs' }); go('#cas'); },
-  xstart: function () { var sid = $('#xSu').value; if (!sid) return; S.examRun = { sid: sid, start: Date.now(), dur: +$('#xDur').value * 60000, reps: {}, i: 0, page: 0, doc: '' }; save(); render(); },
+  xstart: function () { var sid = $('#xSu').value; if (!sid) return; V.examen.pre = null; S.examRun = { sid: sid, start: Date.now(), dur: +$('#xDur').value * 60000, reps: {}, i: 0, page: 0, doc: '' }; save(); render(); },
   xgo: function (el) { keepX(); var R = S.examRun, n = examQs(R.sid).length, v = +el.dataset.v; if (v < 0 || v >= n) return; R.i = v; R.page = 0; R.doc = ''; save(); render(); },
   xdoc: function (el) { keepX(); S.examRun.doc = el.dataset.k; save(); rerender(); showDoc(); },
   xpage: function (el) { keepX(); S.examRun.page = +el.dataset.p; save(); rerender(); showDoc(); },
   xend: function () { var R = S.examRun, qs = examQs(R.sid); keepX(); var vides = qs.filter(function (q) { return !(R.reps[q.id] || '').trim(); }).length;
     if (confirm('Rendre ta copie maintenant ?' + (vides ? ' ' + vides + ' question(s) sans réponse.' : '') + ' Tu verras ensuite les corrections.')) { examRendre(); render(); } },
   xself: function (el) { var it = examRes.items[+el.dataset.i], v = +el.dataset.v; it.note = v; S.qdone[it.q.id] = v; var l = S.answers[it.q.id]; if (l && l[it.answerIndex]) l[it.answerIndex].note = v;
-    var h = S.examHist[examRes.hist]; h.note = Math.round(examRes.items.reduce(function (t, x) { return t + x.note; }, 0) / examRes.items.length * 200) / 10; S.history[examRes.history].note = h.note; save(); rerender(); },
+    var h = S.examHist[examRes.hist]; h.note = Math.round(moyCopie(examRes.items) * 200) / 10; S.history[examRes.history].note = h.note; save(); rerender(); },
   xclose: function () { examRes = null; render(); },
   omat: function (el) { oral = { mat: el.dataset.v, i: -1, dur: oral ? oral.dur : 120 }; rerender(); },
   onext: function () { if (reco) reco.stop(); oral.rep = ''; var L = oralList(oral.mat), i; do { i = Math.floor(Math.random() * L.length); } while (L.length > 1 && i === oral.i); oral.i = i; oral.t0 = Date.now(); oral.fini = false; rerender(); },
@@ -1703,13 +2138,23 @@ var ACT = {
     readState(Object.assign({}, S, { ctrl: S.ctrl.concat([c]) })); S.ctrl.push(c); buildCtrl(); save(); go('#controles/' + c.id); },
   kdel: function (el) { if (!confirm('Supprimer ce contrôle et tous ses dossiers de révision ?')) return; S.ctrl = S.ctrl.filter(function (c) { return c.id !== el.dataset.id; }); buildCtrl(); save(); go('#controles'); },
   ksave: function (el) { keepK(el.dataset.id); toast(save() ? 'Documents enregistrés.' : 'Enregistrement impossible : le texte est sans doute trop long pour le navigateur. Garde seulement l\'essentiel ou joins tes fichiers directement dans l\'IA.'); rerender(); },
-  kia: function (el) { var c = ctrlById(el.dataset.id); keepK(c.id); save(); V.controles.o = { nc: +$('#kNc').value, nq: +$('#kNq').value, niveau: $('#kNv').value }; iaOpen(ctrlPrompt(c, V.controles.o)); },
+  kia: function (el) { var c = ctrlById(el.dataset.id), o = V.controles.o, v = function (s, d) { var f = $(s); return f ? f.value : d; }; keepK(c.id); save();
+    V.controles.o = { mode: v('#kMode', o.mode), nc: +v('#kNc', o.nc), nq: +v('#kNq', o.nq), niveau: v('#kNv', o.niveau) }; iaOpen(ctrlPrompt(c, V.controles.o)); },
+  /* Réponse de l'IA : un sujet BTS ou un dossier complet devient un nouveau dossier ; des questions seules s'ajoutent au dernier dossier de révision. */
   kimp: function (el) {
     var c = ctrlById(el.dataset.id), err = $('#kerr');
-    try { var d = parseDossier($('#kR').value); d.n = (c.dossiers.length ? c.dossiers[c.dossiers.length - 1].n : 0) + 1; d.d = Date.now(); c.dossiers.push(d); buildCtrl();
-      if (!save()) { c.dossiers.pop(); buildCtrl(); throw new Error('mémoire du navigateur pleine : supprime un ancien dossier ou raccourcis le texte du cours.'); }
-      rerender(); toast('Dossier ' + d.n + ' ajouté : ' + d.cards.length + ' flashcards, ' + d.qs.length + ' questions.');
-    } catch (x) { err.className = 'small bad-t'; err.textContent = 'Impossible d\'ajouter : ' + x.message + ' Copie bien toute la réponse de l\'IA, ou redemande-lui « réponds uniquement en JSON ».'; }
+    try {
+      var d = parseDossier($('#kR').value), cible = d.type !== 'bts' && !d.fiche.trim() ? c.dossiers.filter(function (x) { return x.type !== 'bts'; }).pop() : null, avant = JSON.stringify(c.dossiers), msg;
+      if (cible) { cible.cards = cible.cards.concat(d.cards); cible.qs = cible.qs.concat(d.qs); msg = d.qs.length + ' question(s)' + (d.cards.length ? ' et ' + d.cards.length + ' flashcard(s)' : '') + ' ajoutée(s) au dossier ' + cible.n + '.'; }
+      else { d.n = (c.dossiers.length ? c.dossiers[c.dossiers.length - 1].n : 0) + 1; d.d = Date.now(); c.dossiers.push(d); msg = (d.type === 'bts' ? 'Sujet type BTS ' + d.n + ' ajouté : ' + d.qs.length + ' questions.' : 'Dossier ' + d.n + ' ajouté : ' + d.cards.length + ' flashcard' + (d.cards.length > 1 ? 's' : '') + ', ' + d.qs.length + ' question' + (d.qs.length > 1 ? 's' : '') + '.'); }
+      buildCtrl();
+      if (!save()) { c.dossiers = JSON.parse(avant); buildCtrl(); throw new Error('mémoire du navigateur pleine : supprime un ancien dossier ou raccourcis le texte du cours.'); }
+      rerender(); toast(msg);
+    } catch (x) { erreurImport(err, x); }
+  },
+  kexam: function (el) {
+    if (S.examRun) { toast('Un examen blanc est déjà en cours : rends ta copie avant d\'en commencer un autre.'); go('#examen'); return; }
+    examRes = null; V.examen.pre = el.dataset.sid; go('#examen');
   },
   kdeld: function (el) { if (!confirm('Supprimer ce dossier ?')) return; var c = ctrlById(el.dataset.id); c.dossiers = c.dossiers.filter(function (d) { return d.n !== +el.dataset.n; }); buildCtrl(); save(); rerender(); },
   kquiz: function (el) { var c = ctrlById(el.dataset.id); startSession({ ids: ctrlQs(c).map(function (q) { return q.id; }), n: 8, titre: 'Contrôle : ' + c.titre }); go('#cas'); },
@@ -1721,9 +2166,53 @@ var ACT = {
     var st = (S.exstats = S.exstats || {})[exo.type] = S.exstats[exo.type] || { ok: 0, n: 0 }; st.n++; if (ok) st.ok++;
     exo.fini = true; dayCount('ex'); save(); rerender(); toast(ok ? 'Tout est juste, bravo !' : 'Regarde les corrections en rouge et l\'explication.');
   },
-  qrep: function (el) { var it = qcm.items[qcm.i], k = +el.dataset.v, ok = it.opts[k] === it.ok; qcm.rep = k; if (ok) qcm.score++; if (it.n) cardResult(it.n, ok ? 1 : 0); else dayCount('ex'); save(); rerender(); },
-  qnext: function () { qcm.i++; qcm.rep = null; rerender(); },
-  qagain: function () { qcm = qcmBuild(qcm.src); rerender(); },
+  khstart: function () { var l = $('#khLim'); if (l) kh.lim = +l.value; Object.assign(kh, { items: khItems(kh.key), i: 0, score: 0, ok: 0, streak: 0, maxStreak: 0, record: false, phase: 'q', t0: Date.now() });
+    if (!kh.items.length) { kh.phase = 'ready'; toast('Pas assez de questions pour ce choix.'); } rerender(); },
+  khrep: function (el) {
+    if (!kh || kh.phase !== 'q') return;
+    var it = kh.items[kh.i], k = +el.dataset.v, ok = k >= 0 && it.opts[k] === it.ok, reste = Math.max(0, khReste());
+    kh.rep = k; kh.phase = 'r'; kh.gain = 0;
+    if (ok) { kh.streak++; kh.ok++; kh.maxStreak = Math.max(kh.maxStreak, kh.streak); kh.gain = Math.round(500 + 500 * (kh.lim ? reste / (qLim(kh) * 1000) : 1)) + Math.min(500, (kh.streak - 1) * 100); kh.score += kh.gain; } else kh.streak = 0;
+    if (it.n) cardResult(it.n, ok ? 1 : 0); else dayCount('ex'); save(); rerender();
+    var b = $('#khnext'); if (b) b.focus({ preventScroll: true });
+  },
+  zadd: function () { var t = $('#zT').value.trim(); if (!t) { $('#zT').focus(); return; } var z = { id: 'z' + Date.now().toString(36), titre: t.slice(0, 80), qs: [quizQ({})] };
+    S.quiz.push(z); save(); go('#quiz/' + z.id); setTimeout(function () { var f = $('.zqt'); if (f) f.focus(); }, 60); },
+  zdel: function (el) { if (!confirm('Supprimer ce quiz et toutes ses questions ?')) return; S.quiz = S.quiz.filter(function (z) { return z.id !== el.dataset.id; }); delete S.kbest['quiz/' + el.dataset.id]; save(); go('#quiz'); },
+  zqadd: function () { var z = quizById(location.hash.split('/')[1]); if (!z || z.qs.length >= QZ_MAX) return; z.qs.push(quizQ({})); save(); rerender(); var L = document.querySelectorAll('.zqt'); if (L.length) { L[L.length - 1].focus(); L[L.length - 1].scrollIntoView({ block: 'center' }); } },
+  zqdel: function (el) { var z = quizById(location.hash.split('/')[1]), i = +el.dataset.i, x = z && z.qs[i]; if (!x) return;
+    if ((x.q.trim() || x.opts.some(function (o) { return o.trim(); })) && !confirm('Supprimer la question ' + (i + 1) + ' ?')) return; z.qs.splice(i, 1); save(); rerender(); },
+  zmove: function (el) { var z = quizById(location.hash.split('/')[1]), i = +el.dataset.i, j = i + +el.dataset.v; if (!z || j < 0 || j >= z.qs.length) return; var t = z.qs[i]; z.qs[i] = z.qs[j]; z.qs[j] = t; save(); rerender(); },
+  zexp: function (el) { quizExport(quizById(el.dataset.id)); toast('Fichier téléchargé : envoie-le à tes camarades, ils l\'importent dans « Mes quiz ».'); },
+  zanim: function (el) { V.animer.pre = 'quiz/' + el.dataset.id; go('#animer'); },
+  zia: function (el) { var z = quizById(el.dataset.id); V.quiz.sujet = $('#zSujet').value; V.quiz.o = { n: +$('#zN').value }; iaOpen(quizPrompt(z, V.quiz.sujet.trim(), V.quiz.o.n)); },
+  ziaimp: function (el) {
+    var z = quizById(el.dataset.id), err = $('#zerr');
+    try { var qs = parseQuiz($('#zR').value), place = QZ_MAX - z.qs.filter(quizPlayable).length;
+      if (place <= 0) throw new Error('le quiz a déjà ' + QZ_MAX + ' questions.');
+      z.qs = z.qs.filter(function (x) { return x.q.trim() || x.opts.some(function (o) { return o.trim(); }); }).concat(qs.slice(0, place)).slice(0, QZ_MAX);
+      if (!save()) throw new Error('mémoire du navigateur pleine.');
+      V.quiz.sujet = ''; rerender(); toast(Math.min(qs.length, place) + ' question(s) ajoutée(s) au quiz.');
+    } catch (x) { erreurImport(err, x); }
+  },
+  mphost: function () { mpHost($('#mpSrc').value, +$('#mpLim').value); rerender(); },
+  mpstart: function () { if (!mp || !mp.host || mp.phase !== 'lobby') return; mp.items = khItems(mp.key); mp.i = -1; if (!mp.items.length) { toast('Pas assez de questions pour ce choix.'); return; } mpNextQ(); },
+  mpreveal: function () { if (mp && mp.host && mp.phase === 'q') mpReveal(); },
+  mpnext: function () { if (mp && mp.host && mp.phase === 'r') mpNextQ(); },
+  mpquit: function () { if (mp && mp.host && mp.phase !== 'end' && mp.phase !== 'fail' && mpPlayers().length && !confirm('Terminer la partie pour tout le monde ?')) return; mpStop(); rerender(); },
+  mpjoin: function () {
+    var code = $('#mpCode').value.replace(/\D/g, ''), name = $('#mpName').value.replace(/\s+/g, ' ').trim().slice(0, 20);
+    if (code.length !== 6) { toast('Le code de la partie a 6 chiffres.'); $('#mpCode').focus(); return; }
+    if (!name) { toast('Choisis un pseudo.'); $('#mpName').focus(); return; }
+    V.rejoindre.pseudo = name; mpJoin(code, name); rerender();
+  },
+  mpa: function (el) { mpChoose(+el.dataset.v); },
+  khnext: function () {
+    if (!kh || kh.phase !== 'r') return;
+    if (++kh.i < kh.items.length) { kh.phase = 'q'; kh.t0 = Date.now(); rerender(); return; }
+    kh.phase = 'end'; S.kbest = S.kbest || {}; kh.record = !!kh.lim && kh.score > (S.kbest[kh.key] || 0);
+    if (kh.record) { S.kbest[kh.key] = kh.score; save(); } rerender();
+  },
   gdom: function (el) { V.glossaire.f.d = el.dataset.v; rerender(); },
   errm: function (el) { V.erreursfreq.m = el.dataset.v; rerender(); },
   fex: function () { flash.ex = true; rerender(); },
@@ -1761,7 +2250,7 @@ var ACT = {
     session.page = 0; session.doc = ''; session.ex = false;
     if (session.i + 1 < session.items.length) { session.i++; render(); return; }
     session.fini = true;
-    var n = session.items.length, note = Math.round(session.items.reduce(function (t, it) { return t + it.note; }, 0) / n * 200) / 10;
+    var n = session.items.length, note = Math.round(moyCopie(session.items) * 200) / 10;
     S.history.push({ date: Date.now(), titre: session.titre, n: n, note: note }); save(); render();
   },
   flip: function () { flash.shown = !flash.shown; rerender(); },
@@ -1806,10 +2295,13 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Enter' && e.target.id && /^ex\d+$/.test(e.target.id) && exo && !exo.fini) { e.preventDefault(); ACT.xcheck(); }
   if (e.key === 'Tab' && e.target.id === 'pycode') { e.preventDefault(); var ta = e.target, s = ta.selectionStart; ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(ta.selectionEnd); ta.selectionStart = ta.selectionEnd = s + 4; py.code[py.i % PY_ECRIRE.length] = ta.value; ta.dispatchEvent(new Event('input', {bubbles:true})); }
   if (e.key === 'Enter' && e.target.id === 'pyrep' && e.target.tagName === 'INPUT' && !py.done) { e.preventDefault(); ACT.pycheck(); }
+  if (mp && !mp.host && mp.phase === 'q' && curRoute === 'rejoindre' && /^[1-4]$/.test(e.key) && !(e.target.matches && e.target.matches('input,textarea,select'))) { e.preventDefault(); mpChoose(+e.key - 1); }
+  if (e.key === 'Enter' && (e.target.id === 'mpCode' || e.target.id === 'mpName')) { e.preventDefault(); ACT.mpjoin(); }
+  if (kh && kh.phase === 'q' && curRoute === 'chrono' && /^[1-4]$/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey && !(e.target.matches && e.target.matches('input,textarea,select'))) { e.preventDefault(); ACT.khrep({ dataset: { v: String(+e.key - 1) } }); }
 });
 document.addEventListener('change', function (e) {
   var t = e.target;
-  if (t.id === 'optSel') { S.option = t.value; fixSel(); flash = null; qcm = null; oral = null; exo = null; refreshThemeStats(); save(); render(); }
+  if (t.id === 'optSel') { S.option = t.value; fixSel(); flash = null; kh = null; oral = null; exo = null; refreshThemeStats(); save(); render(); }
   if (t.id === 'bImp') { V.biblio.f.imp = t.value; rerender(); }
   if (t.id === 'docSel' && t.value) { keepRep(); session.pdf = true; session.page = +t.value; rerender(); }
   if (t.id === 'cEp') { var su = $('#cSu'); su.value = ''; Array.prototype.forEach.call(su.options, function (o) { o.hidden = !!(o.value && t.value && o.dataset.k !== t.value); }); }
@@ -1818,6 +2310,10 @@ document.addEventListener('change', function (e) {
   if (t.id === 'retSel') { S.retention = +t.value; save(); toast('Les prochaines révisions viseront ' + Math.round(S.retention * 100) + ' % de mémorisation.'); }
   if (t.dataset && t.dataset.plan) { S.planDone = S.planDone || {}; if (t.checked) S.planDone[t.dataset.plan] = 1; else delete S.planDone[t.dataset.plan]; save(); rerender(); }
   if (t.id === 'kImp' && t.files[0]) { var fk = new FileReader(); fk.onload = function () { try { var c = ctrlImport(String(fk.result)); toast('Contrôle « ' + c.titre + ' » importé.'); go('#controles/' + c.id); } catch (x) { alert('Import impossible : ' + x.message); } }; fk.readAsText(t.files[0]); }
+  if (t.id === 'khLim' && kh) kh.lim = +t.value;
+  if (t.id === 'kMode') { keepK(location.hash.split('/')[1]); V.controles.o.mode = t.value; rerender(); }
+  if (t.classList && t.classList.contains('qz')) quizField(t);
+  if (t.id === 'zImp' && t.files[0]) { var fz = new FileReader(); fz.onload = function () { try { var z = quizImport(String(fz.result)); toast('Quiz « ' + z.titre + ' » importé.'); go('#quiz/' + z.id); } catch (x) { alert('Import impossible : ' + x.message); } }; fz.readAsText(t.files[0]); }
   if (t.id === 'oDur') { oral.dur = +t.value; if (oral.i >= 0 && !oral.fini) oral.t0 = Date.now(); rerender(); }
   if (t.id === 'kF' && t.files.length) {
     var id = location.hash.split('/')[1], c = ctrlById(id), files = Array.prototype.slice.call(t.files), done = 0;
@@ -1868,9 +2364,25 @@ window.addEventListener('pagehide', function () { if (S.examRun || memoBox.pendi
 document.addEventListener('visibilitychange', function () { if (document.hidden) { if (S.examRun || memoBox.pending) { keepX(); save(); } } else if (S.examRun && Date.now() >= S.examRun.start + S.examRun.dur) { examRendre(); render(); } });
 document.addEventListener('input', function (e) {
   if (e.target.id === 'rep') keepRep();
+  if (e.target.classList && e.target.classList.contains('qz') && e.target.type !== 'radio' && e.target.tagName !== 'SELECT') quizField(e.target);
   if (e.target.id === 'pycode') py.code[py.i % PY_ECRIRE.length] = e.target.value;
   if (e.target.classList && e.target.classList.contains('memo-t')) { S.memo = S.memo || {}; var v = e.target.value.trim(); if (v) S.memo[e.target.dataset.id] = e.target.value; else delete S.memo[e.target.dataset.id]; memoBox.pending = true; clearTimeout(memoBox.t); memoBox.t = setTimeout(save, 600); }
   if (e.target.id === 'gq') { V.glossaire.f.q = e.target.value; var f = V.glossaire.f; $('#glist').innerHTML = glossList(GLOSSAIRE.filter(function (g) { return (!f.d || g[3] === f.d) && (!f.q || norm(g.join(' ')).indexOf(norm(f.q)) >= 0); }).sort(function (a, b) { return a[0].localeCompare(b[0]); })); } if (e.target.id === 'orep' && oral) oral.rep = e.target.value; if (e.target.id === 'xrep' && S.examRun) { keepX(); clearTimeout(keepX.t); keepX.t = setTimeout(save, 800); } });
+/* Compte à rebours du quiz chrono : temps écoulé = réponse fausse. Hors de la page, la partie est mise en pause sur la question. */
+setInterval(function () {
+  if (!mp || mp.phase !== 'q') return;
+  var lim = mp.host ? qLim(mp) : mp.q.lim, r = mp.t0 + lim * 1000 - Date.now(), n = $('#mpnum');
+  if (n) { n.textContent = Math.max(0, Math.ceil(r / 1000)); n.classList.toggle('low', r < 5000); }
+  if (r > 0) return;
+  if (mp.host) mpReveal(); else if (mp.rep == null) { mp.rep = -1; mpDraw(); }
+}, 200);
+setInterval(function () {
+  if (!kh || kh.phase !== 'q') return;
+  if (curRoute !== 'chrono') { kh.t0 = Date.now(); return; }
+  var r = khReste(), n = $('#khnum');
+  if (r <= 0) { ACT.khrep({ dataset: { v: '-1' } }); return; }
+  if (n) { n.textContent = Math.ceil(r / 1000); n.classList.toggle('low', r < 5000); }
+}, 200);
 setInterval(function () {
   var t = $('#timer');
   if (S.examRun) { var r = S.examRun.start + S.examRun.dur - Date.now(); if (t) { t.textContent = fmtTime(r); t.classList.toggle('low', r < 600000); }

@@ -1,6 +1,15 @@
-# Relecture et corrections — version 21
+# Relecture et corrections — version 24
 
 Audit technique et interface du 13 novembre 2026, à partir de `Revision-BTS-SIO-v19/app`.
+
+Compléments des versions 22 à 24, vérifiés le 23 novembre 2026 :
+
+- Import des réponses de l'IA réparé quand le texte est copié « mis en forme » depuis ChatGPT (échappements Markdown, entités HTML, guillemets typographiques, virgules en trop) ; message clair quand l'IA n'a produit ni flashcard ni question.
+- Mes contrôles : trois demandes à l'IA (dossier complet, questions en plus ajoutées au dernier dossier, sujet type BTS rédigé avec des questions d'annales de la même épreuve comme modèle). Le sujet BTS s'affiche à côté des questions, se travaille question par question ou se passe en examen blanc (4 h présélectionnées, corrigé à la fin) ; sa note est pondérée par le barème.
+- Quiz chrono façon Kahoot, seul ou à plusieurs en pair à pair (PeerJS), avec « Sans chrono ». Mes quiz : édition, génération par l'IA, partage par fichier, temps par question.
+- Doublons retirés : « QCM rapide » fusionné dans le quiz chrono (mode sans chrono, anciens liens `#qcm` redirigés) ; « Révision express » rangée dans les séances guidées ; « Erreurs fréquentes » renommée « Pièges fréquents » pour ne plus se confondre avec le carnet d'erreurs ; `LISEZMOI.md`, copie exacte du README, supprimé ; alias `joursAvant` remplacé par `daysUntil` ; bouton « S'entraîner question par question » des sujets BTS retiré (même rôle que « M'interroger ») ; lecture du JSON des IA et noms de fichiers mis en commun.
+- Feuille de style : la section « Relecture v20 » qui redéfinissait 35 règles, les 4 blocs téléphone et les 2 blocs impression ont été fusionnés (629 → 576 lignes), ainsi que les déclarations mortes du menu mobile. Les styles calculés de chaque élément ont été comparés avant/après sur 27 pages, en thème clair et sombre, à 375, 1000 et 1280 px : aucune différence.
+- Tests : 22 groupes pour le socle (dont réparation des réponses copiées, sujets BTS et quiz personnels) et 4 pour l'étude, sans Playwright. Parcours vérifiés à la main dans le navigateur : contrôles, quiz chrono, Mes quiz, partie à plusieurs à 2 joueurs.
 
 Compléments de la version 21, vérifiés le 20 novembre 2026 :
 

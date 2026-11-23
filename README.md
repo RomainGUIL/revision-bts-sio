@@ -1,4 +1,4 @@
-# Révision BTS SIO — version 21
+# Révision BTS SIO — version 24
 
 Application autonome pour les options SISR et SLAM. Ouvrir `index.html` dans Chrome, Edge ou Firefox. Aucun compte, serveur ou paquet à installer pour l'utilisation locale.
 
@@ -6,7 +6,7 @@ Application autonome pour les options SISR et SLAM. Ouvrir `index.html` dans Chr
 
 1. Choisir son option en haut de page.
 2. Renseigner sa date d'examen dans **Organisation → Réglages et sauvegarde**.
-3. Lancer une **Séance guidée** de 15 ou 30 minutes, la révision express, ou ouvrir **Mes matières**.
+3. Lancer une **Séance guidée** (express 10 minutes, 15 ou 30 minutes), ou ouvrir **Mes matières**.
 4. Exporter régulièrement sa progression depuis les réglages.
 
 La progression reste dans ce navigateur, sous la clé `bts-sio-revision-v1`. La mise à jour au même emplacement conserve cette clé. Déplacer le dossier, changer de navigateur ou passer du fichier local à un site peut donner un stockage différent : exporter depuis l'ancienne adresse, puis restaurer depuis la nouvelle. Utiliser un seul onglet à la fois pour éviter que deux sessions écrasent leurs modifications.
@@ -15,14 +15,15 @@ La progression reste dans ce navigateur, sous la clé `bts-sio-revision-v1`. La 
 
 | Besoin | Outil |
 | --- | --- |
-| Réviser chaque jour | Tableau de bord, objectif du jour, révision express |
+| Réviser chaque jour | Tableau de bord, objectif du jour, séances guidées (express 10 min, 15 min, 30 min) |
 | Mémoriser | Flashcards FSRS et carnet d'erreurs |
-| Comprendre | Mes matières, bibliothèque, schémas, glossaire, erreurs fréquentes |
+| Comprendre | Mes matières, bibliothèque, schémas, glossaire, pièges fréquents |
 | Rédiger | Études de cas, corrections proposées, auto-évaluation |
 | Travailler en temps limité | Examen blanc, copie enregistrée pendant la saisie |
 | Préparer les oraux | Simulateur et réalisations E5/E6 |
-| Préparer un contrôle | Import de cours, dossiers générés avec l'IA |
-| Pratiquer | Exercices réseau, maths/Python, QCM et TP SISR |
+| Préparer un contrôle | Import de cours ; avec l'IA : dossier complet, questions en plus, ou sujet type BTS rédigé d'après les annales de la même épreuve, à passer en examen blanc avec une note pondérée par le barème |
+| Jouer et réviser en QCM | Quiz chrono façon Kahoot (ou sans chrono), seul ou à plusieurs (code de partie, en pair à pair) ; « Mes quiz » pour écrire ses questions ou les faire écrire par l'IA, et les partager |
+| Pratiquer | Exercices réseau, maths/Python et TP SISR |
 | S'organiser | Planning, notes d'entraînement et sauvegardes |
 | Consulter les sources | Annales PDF et thèmes à réviser |
 | Retrouver son travail | Bouton « Reprendre où j’en étais », brouillons conservés après fermeture |
@@ -44,6 +45,7 @@ Les brouillons concernent les études de cas, le paquet de flashcards actif, Pyt
 - Les quatre écoutes sont des exercices originaux courts (51 à 58 secondes), à voix américaine synthétique. Elles ne constituent pas des épreuves officielles et ne remplacent pas l'écoute de locuteurs variés. Les anciens sujets de maths ne remplacent pas les consignes actuelles du CCF. Le sujet CEJM propre au SIO de 2026 n'est pas inclus.
 - Au clic sur un bouton IA, la demande est copiée et le service choisi s'ouvre. Une demande courte est transmise dans l'adresse du nouvel onglet ; une demande longue doit être collée. Les contenus partagés passent alors par ce service.
 - Pas de synchronisation automatique : utiliser l'export/import entre appareils.
+- Quiz à plusieurs : la bibliothèque PeerJS est chargée depuis unpkg.com au lancement d'une partie, et son service public met les navigateurs en relation ; les réponses passent ensuite directement d'un appareil à l'autre. Il faut Internet, certains réseaux d'établissement bloquent le pair à pair (essayer la 4G), et seuls des pseudos circulent. Un joueur déconnecté ne peut pas revenir dans la partie en cours.
 
 Le thème CGE 2027 « Le vrai du faux » est confirmé par le [Bulletin officiel](https://www.education.gouv.fr/bo/2026/Hebdo17/ESRS2608144N). La date CGE du 11 mai 2027, de 9 h à 12 h en métropole, figure au [calendrier officiel](https://www.education.gouv.fr/bo/2026/Hebdo38/ESRE2625597A). Pour les épreuves propres au SIO et les oraux, suivre la convocation.
 
@@ -61,7 +63,7 @@ En ouvrant `index.html` directement, les PDF et audios sont simplement lus dans 
 | --- | --- |
 | `index.html` | Structure et ordre de chargement |
 | `css/style.css` | Interface, thèmes, téléphone et impression |
-| `js/app.js` | État, validation, calculs, vues `V`, actions `ACT`, routage par hash |
+| `js/app.js` | État, validation, calculs, vues `V`, actions `ACT`, routage par hash (dont contrôles, quiz chrono, Mes quiz et parties à plusieurs) |
 | `js/study.js`, `css/study.css` | Brouillons, séances, relecture, écoute, recherche et préparation hors ligne |
 | `data/media.js`, `audio/*.wav` | Textes, questions et fichiers des quatre écoutes ; catalogue des médias |
 | `data/*.js` | Contenus pédagogiques chargés dans `window` |
@@ -76,7 +78,7 @@ Les textes d'énoncés et corrections sont échappés. Les documents des cas son
 
 ### Vérifications
 
-Avec Node.js, depuis le dossier `app` :
+Avec Node.js, depuis le dossier de l'application :
 
 ```sh
 node tools/test.cjs
