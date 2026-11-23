@@ -1485,71 +1485,90 @@ V.quiz = function (id) {
       '<textarea id="zR" placeholder="Colle ici la réponse de l\'IA (le bloc qui commence par {)"></textarea><div class="row" style="margin-top:.6rem"><button class="btn" data-a="ziaimp" data-id="' + z.id + '">Ajouter ces questions</button><span class="small" id="zerr"></span></div></div>';
 };
 
-/* — Quiz chrono à plusieurs, en pair à pair (PeerJS, chargé seulement à l'usage) —
-   L'animateur ouvre #animer : son navigateur sert de « serveur » sous l'identifiant PeerJS btssio-kq-<code>. Les joueurs ouvrent #rejoindre.
-   Le service public de PeerJS ne sert qu'à mettre les navigateurs en relation ; ensuite les messages vont directement de l'un à l'autre.
+/* — Quiz chrono à plusieurs, via Supabase Realtime (bibliothèque chargée seulement à l'usage, clés dans js/config.js) —
+   L'animateur ouvre #animer et crée un canal « btssio-kq-<code> » ; les joueurs ouvrent #rejoindre et s'y abonnent. Tout passe par le
+   serveur Supabase en WebSocket sur le port 443 (comme un site web) : aucun lien direct entre appareils, rien n'est enregistré.
+   Chaque message porte « from » (id de l'expéditeur, « host » pour l'animateur) et « to » (« host », l'id d'un joueur, ou « * » pour tous).
    Messages joueur → animateur : { t:'join', name } { t:'a', i, k }
-   Messages animateur → joueur : { t:'ok' } { t:'err', msg } { t:'q', i, n, q, opts, lim } { t:'r', ok, gain, score, rank, nb, bonne, streak } { t:'end', rank, nb, score, top }
+   Messages animateur → joueur : { t:'ok' } { t:'err', msg } { t:'q', i, n, q, opts, lim, rep } { t:'r', … } { t:'end', … } { t:'bye' }
+   Un joueur garde son id (sessionStorage) : après une mise en veille ou un rechargement, il retrouve sa place et ses points.
    Seuls des pseudos circulent (pas de nom réel). mp = état de la partie (animateur : host = true ; joueur : host = false). */
-var PEER_SRC = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', PEER_PREFIX = 'btssio-kq-', MP_MAX = 60;
-var mp = null;
-function peerLib(cb) {
-  if (window.Peer) { cb(); return; }
-  var s = document.createElement('script'); s.src = PEER_SRC; s.crossOrigin = 'anonymous';
-  s.onload = function () { cb(window.Peer ? null : new Error('PeerJS introuvable')); };
-  s.onerror = function () { s.remove(); cb(new Error('Impossible de charger PeerJS : il faut être connecté à Internet.')); };
+var SUPA_SRC = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js', MP_PREFIX = 'btssio-kq-', MP_MAX = 60;
+var mp = null, supaClient = null;
+function mpConfigOK() { var c = window.MULTI || {}; return /^https:\/\/[\w-]+\.supabase\.co\/?$/.test(c.url || '') && String(c.cle || '').length > 20; }
+function supaLib(cb) {
+  if (window.supabase && window.supabase.createClient) { cb(); return; }
+  var s = document.createElement('script'); s.src = SUPA_SRC; s.crossOrigin = 'anonymous';
+  s.onload = function () { cb(window.supabase && window.supabase.createClient ? null : new Error('Bibliothèque Supabase introuvable.')); };
+  s.onerror = function () { s.remove(); cb(new Error('Impossible de charger le module de jeu à plusieurs : il faut être connecté à Internet.')); };
   document.head.appendChild(s);
 }
+function supa() {
+  if (!supaClient) supaClient = window.supabase.createClient(window.MULTI.url.replace(/\/$/, ''), window.MULTI.cle, { auth: { persistSession: false, autoRefreshToken: false }, realtime: { params: { eventsPerSecond: 40 } } });
+  return supaClient;
+}
+/* Ouvre le canal de la partie. onMsg reçoit les messages qui nous sont adressés ; onReady est appelé à chaque (ré)abonnement réussi. */
+function mpOpen(me, onMsg, onReady, onLeave) {
+  var ch = me.ch = supa().channel(MP_PREFIX + me.code, { config: { broadcast: { self: false, ack: false }, presence: { key: me.id } } });
+  ch.on('broadcast', { event: 'm' }, function (e) { var m = e && e.payload; if (mp === me && m && typeof m === 'object' && (m.to === me.id || m.to === '*')) onMsg(m); });
+  ch.on('presence', { event: 'leave' }, function (e) { if (mp === me) (e.leftPresences || []).forEach(function (p) { onLeave(p); }); });
+  ch.subscribe(function (status) {
+    if (mp !== me) return;
+    if (status === 'SUBSCRIBED') { ch.track({ id: me.id, role: me.host ? 'host' : 'player' }); onReady(); }
+    else if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && me.phase === 'conn') { me.phase = 'fail'; me.err = 'Connexion au serveur de jeu impossible. Vérifie la connexion Internet et réessaie.'; mpDraw(); }
+  });
+}
+function mpPost(m) { try { mp.ch.send({ type: 'broadcast', event: 'm', payload: Object.assign({ from: mp.id }, m) }); } catch (e) {} }
 function mpDraw() { if (curRoute === 'animer' || curRoute === 'rejoindre') rerender(); }
-function mpStop() { if (mp && mp.peer) { try { mp.peer.destroy(); } catch (e) {} } mp = null; }
+function mpStop() {
+  if (mp && mp.ch) { if (mp.host) mpPost({ to: '*', t: 'bye' }); var ch = mp.ch; setTimeout(function () { try { supa().removeChannel(ch); } catch (e) {} }, 300); }
+  mp = null;
+}
 function mpPlayers() { return Object.keys(mp.players).map(function (id) { return mp.players[id]; }); }
 function mpRank() { return mpPlayers().filter(function (p) { return !p.gone; }).sort(function (a, b) { return b.score - a.score; }); }
-function mpSend(p, m) { try { if (p.conn && p.conn.open) p.conn.send(m); } catch (e) {} }
+function mpSend(p, m) { mpPost(Object.assign({ to: p.id }, m)); }
+function mpQMsg(p) { var it = mp.items[mp.i]; return { t: 'q', i: mp.i, n: mp.items.length, q: it.q, opts: it.opts, lim: Math.max(1, Math.ceil((mp.t0 + qLim(mp) * 1000 - Date.now()) / 1000)), rep: !!(p && p.ans) }; }
+function mpResMsg(p, R) { var it = mp.items[mp.i], i = R.indexOf(p); return { t: 'r', ok: !!(p.ans && p.ans.ok), rep: !!p.ans, gain: p.ans ? p.ans.gain : 0, score: p.score, rank: i + 1, nb: R.length, bonne: it.ok, streak: p.streak }; }
+function mpEndMsg(p, R) { return { t: 'end', rank: R.indexOf(p) + 1, nb: R.length, score: p.score, top: R.slice(0, 3).map(function (x) { return [x.name, x.score]; }) }; }
 
 /* Animateur */
 function mpHost(key, lim) {
   mpStop();
-  var me = mp = { host: true, key: key, lim: lim, phase: 'conn', players: {}, code: '' };
-  peerLib(function (err) {
+  if (!mpConfigOK()) { mp = { host: true, phase: 'fail', err: 'Le jeu à plusieurs n\'est pas encore configuré : il faut renseigner l\'adresse et la clé du projet Supabase dans js/config.js.' }; return; }
+  var me = mp = { host: true, id: 'host', key: key, lim: lim, phase: 'conn', players: {}, code: String(100000 + Math.floor(Math.random() * 900000)) };
+  supaLib(function (err) {
     if (mp !== me) return;
     if (err) { me.phase = 'fail'; me.err = err.message; mpDraw(); return; }
-    var tries = 0;
-    (function open() {
-      var code = String(100000 + Math.floor(Math.random() * 900000)), peer = new Peer(PEER_PREFIX + code);
-      me.peer = peer;
-      peer.on('open', function () { if (mp !== me) { peer.destroy(); return; } me.code = code; me.phase = 'lobby'; mpDraw(); });
-      peer.on('error', function (e) {
-        if (mp !== me) return;
-        if (e.type === 'unavailable-id' && ++tries < 5) { peer.destroy(); open(); return; }
-        if (me.phase === 'conn') { me.phase = 'fail'; me.err = 'Impossible de créer la partie (' + e.type + '). Vérifie la connexion Internet.'; mpDraw(); }
-      });
-      peer.on('connection', function (conn) { mpHostConn(me, conn); });
-    })();
+    mpOpen(me, function (m) { if (m.to === 'host') mpHostMsg(me, m); },
+      function () { if (me.phase === 'conn') { me.phase = 'lobby'; mpDraw(); } },
+      function (p) { var j = me.players[p.id]; if (!j || p.role === 'host') return; if (me.phase === 'lobby') delete me.players[p.id]; else j.gone = true; mpDraw(); mpCheckAll(); });
   });
 }
-function mpHostConn(me, conn) {
-  conn.on('data', function (m) {
-    if (mp !== me || !m || typeof m !== 'object') return;
-    if (m.t === 'join') {
-      var name = String(m.name || '').replace(/\s+/g, ' ').trim().slice(0, 20), list = mpPlayers();
-      if (!name) { conn.send({ t: 'err', msg: 'Choisis un pseudo.' }); return; }
-      if (me.phase !== 'lobby') { conn.send({ t: 'err', msg: 'La partie a déjà commencé : attends la prochaine.' }); return; }
-      if (list.length >= MP_MAX) { conn.send({ t: 'err', msg: 'La partie est complète.' }); return; }
-      if (list.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); })) { conn.send({ t: 'err', msg: 'Ce pseudo est déjà pris, choisis-en un autre.' }); return; }
-      me.players[conn.peer] = { name: name, conn: conn, score: 0, streak: 0, ans: null };
-      conn.send({ t: 'ok', name: name }); mpDraw();
-    } else if (m.t === 'a') mpAnswer(conn.peer, m);
-  });
-  conn.on('close', function () {
-    if (mp !== me) return; var p = me.players[conn.peer]; if (!p) return;
-    if (me.phase === 'lobby') delete me.players[conn.peer]; else p.gone = true;
-    mpDraw(); mpCheckAll();
-  });
+function mpHostMsg(me, m) {
+  var id = String(m.from || '').slice(0, 40), p = me.players[id];
+  if (!/^j[\w-]+$/.test(id)) return;
+  if (m.t === 'join') {
+    if (p) {   // retour d'un joueur (mise en veille, réseau perdu, page rechargée) : il retrouve sa place et l'écran en cours
+      p.gone = false; mpSend(p, { t: 'ok', name: p.name });
+      var R = mpRank();
+      if (me.phase === 'q') mpSend(p, mpQMsg(p)); else if (me.phase === 'r') mpSend(p, mpResMsg(p, R)); else if (me.phase === 'end') mpSend(p, mpEndMsg(p, R));
+      mpDraw(); return;
+    }
+    var name = String(m.name || '').replace(/\s+/g, ' ').trim().slice(0, 20), list = mpPlayers();
+    var refus = !name ? 'Choisis un pseudo.' : me.phase === 'end' ? 'La partie est terminée.' : list.length >= MP_MAX ? 'La partie est complète.'
+      : list.some(function (x) { return x.name.toLowerCase() === name.toLowerCase(); }) ? 'Ce pseudo est déjà pris, choisis-en un autre.' : '';
+    if (refus) { mpPost({ to: id, t: 'err', msg: refus }); return; }
+    p = me.players[id] = { id: id, name: name, score: 0, streak: 0, ans: null };   // une arrivée en cours de partie commence à 0 point
+    mpSend(p, { t: 'ok', name: name });
+    if (me.phase === 'q') mpSend(p, mpQMsg(p));
+    mpDraw();
+  } else if (m.t === 'a') mpAnswer(id, m);
 }
 function mpNextQ() {
   if (++mp.i >= mp.items.length) { mpEnd(); return; }
-  var it = mp.items[mp.i]; mp.phase = 'q'; mp.t0 = Date.now();
-  mpPlayers().forEach(function (p) { p.ans = null; mpSend(p, { t: 'q', i: mp.i, n: mp.items.length, q: it.q, opts: it.opts, lim: qLim(mp) }); });
+  mp.phase = 'q'; mp.t0 = Date.now();
+  mpPlayers().forEach(function (p) { p.ans = null; });
+  mpPost(Object.assign({ to: '*' }, mpQMsg(null)));
   mpDraw();
 }
 function mpAnswer(id, m) {
@@ -1561,16 +1580,16 @@ function mpAnswer(id, m) {
 }
 function mpCheckAll() { if (mp && mp.host && mp.phase === 'q') { var L = mpPlayers().filter(function (p) { return !p.gone; }); if (L.length && L.every(function (p) { return p.ans; })) mpReveal(); } }
 function mpReveal() {
-  var it = mp.items[mp.i]; mp.phase = 'r';
+  mp.phase = 'r';
   mpPlayers().forEach(function (p) { var a = p.ans; p.score += a ? a.gain : 0; p.streak = a && a.ok ? p.streak + 1 : 0; });
   var R = mpRank();
-  R.forEach(function (p, i) { mpSend(p, { t: 'r', ok: !!(p.ans && p.ans.ok), rep: !!p.ans, gain: p.ans ? p.ans.gain : 0, score: p.score, rank: i + 1, nb: R.length, bonne: it.ok, streak: p.streak }); });
+  R.forEach(function (p) { mpSend(p, mpResMsg(p, R)); });
   mpDraw();
 }
 function mpEnd() {
   mp.phase = 'end';
-  var R = mpRank(), top = R.slice(0, 3).map(function (p) { return [p.name, p.score]; });
-  R.forEach(function (p, i) { mpSend(p, { t: 'end', rank: i + 1, nb: R.length, score: p.score, top: top }); });
+  var R = mpRank();
+  R.forEach(function (p) { mpSend(p, mpEndMsg(p, R)); });
   mpDraw();
 }
 function mpTop(R, n) { return '<ol class="mptop">' + R.slice(0, n).map(function (p) { return '<li><span>' + esc(p.name) + '</span><b>' + p.score + '</b></li>'; }).join('') + '</ol>'; }
@@ -1580,11 +1599,11 @@ V.animer = function () {
     var L = khSources();
     return head + '<div class="card"><div class="filters"><label>Questions<select id="mpSrc">' + L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + ((V.animer.pre ? V.animer.pre === x[0] : kh && kh.key === x[0]) ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></label>' +
       '<label>Temps par question<select id="mpLim">' + [10, 20, 30].map(function (s) { return '<option value="' + s + '"' + (s === 20 ? ' selected' : '') + '>' + s + ' s</option>'; }).join('') + '</select></label><button class="btn" data-a="mphost">Créer la partie</button></div>' +
-      '<p class="small muted" style="margin:0">La connexion se fait en pair à pair (PeerJS) : il faut Internet, et certains wifi d\'établissement la bloquent. Si un joueur n\'arrive pas à se connecter, essaie la 4G.</p></div>' +
+      '<p class="small muted" style="margin:0">' + (mpConfigOK() ? 'Il faut Internet sur l\'écran de l\'animateur et sur les téléphones (wifi ou 4G). Un joueur qui perd la connexion ou dont le téléphone se met en veille retrouve sa place en revenant sur la page.' : '<b class="bad-t">Le jeu à plusieurs n\'est pas encore configuré</b> : renseigne l\'adresse et la clé du projet Supabase dans <code>js/config.js</code>.') + '</p></div>' +
       '<p><a href="#chrono">← Jouer seul</a> · <a href="#rejoindre">Je suis joueur : rejoindre une partie</a></p>';
   }
   var quit = '<button class="btn ghost small" data-a="mpquit">Terminer la partie</button>';
-  if (mp.phase === 'conn') return head + '<div class="card kready"><p class="kbig">Création…</p><p class="muted">Connexion au service PeerJS.</p>' + quit + '</div>';
+  if (mp.phase === 'conn') return head + '<div class="card kready"><p class="kbig">Création…</p><p class="muted">Connexion au serveur de jeu.</p>' + quit + '</div>';
   if (mp.phase === 'fail') return head + '<div class="verdict bad"><b>' + esc(mp.err) + '</b></div><button class="btn" data-a="mpquit">Retour</button>';
   var P = mpPlayers().filter(function (p) { return !p.gone; });
   if (mp.phase === 'lobby') {
@@ -1614,33 +1633,44 @@ V.animer = function () {
 };
 
 /* Joueur */
+/* Identifiant du joueur pour une partie donnée, gardé le temps de l'onglet : il permet de revenir dans la partie avec ses points. */
+function mpIdJoueur(code) {
+  var k = 'mp-joueur-' + code, id = null;
+  try { id = sessionStorage.getItem(k); } catch (e) {}
+  if (!id || !/^j[\w-]+$/.test(id)) { id = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); try { sessionStorage.setItem(k, id); } catch (e) {} }
+  return id;
+}
 function mpJoin(code, name) {
   mpStop();
-  var me = mp = { host: false, code: code, name: name, phase: 'conn' };
-  setTimeout(function () { if (mp === me && me.phase === 'conn') { me.phase = 'fail'; me.err = 'La connexion ne s\'établit pas : le réseau bloque sans doute le pair à pair. Essaie en 4G ou sur un autre wifi.'; if (me.peer) me.peer.destroy(); mpDraw(); } }, 15000);
-  peerLib(function (err) {
+  if (!mpConfigOK()) { mp = { host: false, phase: 'fail', err: 'Le jeu à plusieurs n\'est pas encore configuré sur cette version de l\'application (js/config.js).' }; return; }
+  var me = mp = { host: false, id: mpIdJoueur(code), code: code, name: name, phase: 'conn' };
+  try { sessionStorage.setItem('mp-pseudo', name); } catch (e) {}
+  var hello = function () { if (mp === me) mpPost({ to: 'host', t: 'join', name: name }); };
+  supaLib(function (err) {
     if (mp !== me) return;
     if (err) { me.phase = 'fail'; me.err = err.message; mpDraw(); return; }
-    var peer = me.peer = new Peer();
-    peer.on('open', function () {
-      if (mp !== me) { peer.destroy(); return; }
-      var c = me.conn = peer.connect(PEER_PREFIX + code, { reliable: true });
-      c.on('open', function () { c.send({ t: 'join', name: name }); });
-      c.on('data', function (m) { mpPlayerMsg(me, m); });
-      c.on('close', function () { if (mp === me && me.phase !== 'end' && me.phase !== 'fail') { me.phase = 'fail'; me.err = 'La connexion avec l\'animateur est coupée (partie terminée ou réseau perdu).'; mpDraw(); } });
-    });
-    peer.on('error', function (e) {
-      if (mp !== me || me.phase === 'end') return;
-      me.phase = 'fail'; me.err = e.type === 'peer-unavailable' ? 'Aucune partie avec ce code : vérifie le code affiché par l\'animateur.' : 'Connexion impossible (' + e.type + '). Le réseau bloque peut-être le pair à pair : essaie en 4G ou sur un autre wifi.';
-      mpDraw();
-    });
+    mpOpen(me, function (m) { if (m.from === 'host') mpPlayerMsg(me, m); },
+      function () {   // abonné (ou réabonné après une coupure) : on se présente, et on insiste tant que l'animateur n'a pas répondu
+        hello();
+        var tries = 0, t = setInterval(function () {
+          if (mp !== me || me.phase !== 'conn') { clearInterval(t); return; }
+          if (++tries >= 4) { clearInterval(t); me.phase = 'fail'; me.err = 'Aucune partie en cours avec ce code : vérifie le code affiché par l\'animateur.'; mpDraw(); return; }
+          hello();
+        }, 2500);
+      },
+      function (p) { if (p.role === 'host' && me.phase !== 'end' && me.phase !== 'fail') { me.lost = true; mpDraw(); } });
   });
 }
+/* Retour sur l'onglet (téléphone sorti de veille) : on se représente pour récupérer l'écran en cours. */
+document.addEventListener('visibilitychange', function () { if (!document.hidden && mp && !mp.host && mp.ch && mp.phase !== 'end' && mp.phase !== 'fail') mpPost({ to: 'host', t: 'join', name: mp.name }); });
 function mpPlayerMsg(me, m) {
   if (mp !== me || !m || typeof m !== 'object') return;
-  if (m.t === 'ok') me.phase = 'wait';
-  else if (m.t === 'err') { me.phase = 'fail'; me.err = String(m.msg || 'Refusé par l\'animateur.'); if (me.peer) me.peer.destroy(); }
-  else if (m.t === 'q' && Array.isArray(m.opts)) { me.phase = 'q'; me.q = { i: Math.round(+m.i) || 0, n: Math.round(+m.n) || 0, q: String(m.q), opts: m.opts.slice(0, 4).map(String), lim: Math.min(60, Math.max(5, +m.lim || 20)) }; me.t0 = Date.now(); me.rep = null; }
+  me.lost = false;
+  if (m.t === 'ok') { if (me.phase === 'conn') me.phase = 'wait'; }
+  else if (m.t === 'err') { me.phase = 'fail'; me.err = String(m.msg || 'Refusé par l\'animateur.'); }
+  else if (m.t === 'bye') { me.phase = 'fail'; me.err = 'L\'animateur a terminé la partie.'; }
+  else if (m.t === 'q' && Array.isArray(m.opts)) { var i = Math.round(+m.i) || 0; if (me.phase === 'q' && me.q && me.q.i === i && me.rep != null) return;
+    me.phase = 'q'; me.q = { i: i, n: Math.round(+m.n) || 0, q: String(m.q), opts: m.opts.slice(0, 4).map(String), lim: Math.min(60, Math.max(1, +m.lim || 20)) }; me.t0 = Date.now(); me.rep = m.rep ? 1 : null; }
   else if (m.t === 'r' || m.t === 'end') {
     var num = function (v) { return Math.max(0, Math.round(+v) || 0); };
     me.phase = m.t; me.res = { ok: !!m.ok, rep: !!m.rep, gain: num(m.gain), score: num(m.score), rank: num(m.rank), nb: num(m.nb), streak: num(m.streak), bonne: String(m.bonne || ''),
@@ -1651,17 +1681,21 @@ function mpPlayerMsg(me, m) {
 }
 function mpChoose(k) {
   if (!mp || mp.host || mp.phase !== 'q' || mp.rep != null || Date.now() > mp.t0 + mp.q.lim * 1000) return;
-  mp.rep = k; try { mp.conn.send({ t: 'a', i: mp.q.i, k: k }); } catch (e) {} mpDraw();
+  mp.rep = k; mpPost({ to: 'host', t: 'a', i: mp.q.i, k: k }); mpDraw();
 }
+function mpPseudo() { try { return sessionStorage.getItem('mp-pseudo') || ''; } catch (e) { return ''; } }
 V.rejoindre = function (code) {
   var head = pageHead('Rejoindre une partie', 'Entre le code affiché par l\'animateur et choisis un pseudo (pas ton nom complet).');
   if (!mp || mp.host) {
-    var c = (code || '').replace(/\D/g, '').slice(0, 6);
+    var c = (code || '').replace(/\D/g, '').slice(0, 6), deja = null;
+    try { deja = c.length === 6 && sessionStorage.getItem('mp-joueur-' + c); } catch (e) {}
+    if (!mp && deja && mpPseudo()) { setTimeout(function () { if (!mp && curRoute === 'rejoindre') { mpJoin(c, mpPseudo()); rerender(); } }, 0); }   // page rechargée en pleine partie : on y retourne tout seul
     return head + '<div class="card narrow"><div class="filters"><label>Code de la partie<input id="mpCode" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="123 456" value="' + esc(c) + '"></label>' +
-      '<label>Pseudo<input id="mpName" maxlength="20" autocomplete="nickname" placeholder="ex. Tom_SISR" value="' + esc(V.rejoindre.pseudo || '') + '"></label><button class="btn" data-a="mpjoin">Rejoindre</button></div>' +
+      '<label>Pseudo<input id="mpName" maxlength="20" autocomplete="nickname" placeholder="ex. Tom_SISR" value="' + esc(V.rejoindre.pseudo || mpPseudo()) + '"></label><button class="btn" data-a="mpjoin">Rejoindre</button></div>' +
       (mp && mp.host ? '<p class="small bad-t">Tu animes déjà une partie sur cet appareil : rejoindre la terminera.</p>' : '') + '</div><p><a href="#chrono">← Jouer seul</a></p>';
   }
   var quit = '<button class="btn ghost small" data-a="mpquit">Quitter</button>', R = mp.res;
+  if (mp.lost) head += '<div class="verdict mid"><b>L\'animateur semble déconnecté : on attend son retour…</b></div>';
   if (mp.phase === 'conn') return head + '<div class="card kready"><p class="kbig">Connexion…</p>' + quit + '</div>';
   if (mp.phase === 'fail') return head + '<div class="verdict bad"><b>' + esc(mp.err) + '</b></div><button class="btn" data-a="mpquit">Réessayer</button>';
   if (mp.phase === 'wait') return head + '<div class="card kready"><p class="kbig">C\'est bon, ' + esc(mp.name) + ' !</p><p class="muted">Regarde l\'écran de l\'animateur : la partie va commencer.</p>' + quit + '</div>';
@@ -2199,7 +2233,10 @@ var ACT = {
   mpstart: function () { if (!mp || !mp.host || mp.phase !== 'lobby') return; mp.items = khItems(mp.key); mp.i = -1; if (!mp.items.length) { toast('Pas assez de questions pour ce choix.'); return; } mpNextQ(); },
   mpreveal: function () { if (mp && mp.host && mp.phase === 'q') mpReveal(); },
   mpnext: function () { if (mp && mp.host && mp.phase === 'r') mpNextQ(); },
-  mpquit: function () { if (mp && mp.host && mp.phase !== 'end' && mp.phase !== 'fail' && mpPlayers().length && !confirm('Terminer la partie pour tout le monde ?')) return; mpStop(); rerender(); },
+  mpquit: function () { if (mp && mp.host && mp.phase !== 'end' && mp.phase !== 'fail' && mpPlayers().length && !confirm('Terminer la partie pour tout le monde ?')) return;
+    var c = mp && !mp.host && mp.code || (curRoute === 'rejoindre' && location.hash.split('/')[1]);   // un joueur qui quitte ne doit pas être remis automatiquement dans la partie
+    if (c) { try { sessionStorage.removeItem('mp-joueur-' + c); } catch (e) {} }
+    mpStop(); rerender(); },
   mpjoin: function () {
     var code = $('#mpCode').value.replace(/\D/g, ''), name = $('#mpName').value.replace(/\s+/g, ' ').trim().slice(0, 20);
     if (code.length !== 6) { toast('Le code de la partie a 6 chiffres.'); $('#mpCode').focus(); return; }

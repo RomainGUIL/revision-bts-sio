@@ -22,7 +22,7 @@ La progression reste dans ce navigateur, sous la clé `bts-sio-revision-v1`. La 
 | Travailler en temps limité | Examen blanc, copie enregistrée pendant la saisie |
 | Préparer les oraux | Simulateur et réalisations E5/E6 |
 | Préparer un contrôle | Import de cours ; avec l'IA : dossier complet, questions en plus, ou sujet type BTS rédigé d'après les annales de la même épreuve, à passer en examen blanc avec une note pondérée par le barème |
-| Jouer et réviser en QCM | Quiz chrono façon Kahoot (ou sans chrono), seul ou à plusieurs (code de partie, en pair à pair) ; « Mes quiz » pour écrire ses questions ou les faire écrire par l'IA, et les partager |
+| Jouer et réviser en QCM | Quiz chrono façon Kahoot (ou sans chrono), seul ou à plusieurs (code de partie, via Supabase Realtime) ; « Mes quiz » pour écrire ses questions ou les faire écrire par l'IA, et les partager |
 | Pratiquer | Exercices réseau, maths/Python et TP SISR |
 | S'organiser | Planning, notes d'entraînement et sauvegardes |
 | Consulter les sources | Annales PDF et thèmes à réviser |
@@ -45,7 +45,8 @@ Les brouillons concernent les études de cas, le paquet de flashcards actif, Pyt
 - Les quatre écoutes sont des exercices originaux courts (51 à 58 secondes), à voix américaine synthétique. Elles ne constituent pas des épreuves officielles et ne remplacent pas l'écoute de locuteurs variés. Les anciens sujets de maths ne remplacent pas les consignes actuelles du CCF. Le sujet CEJM propre au SIO de 2026 n'est pas inclus.
 - Au clic sur un bouton IA, la demande est copiée et le service choisi s'ouvre. Une demande courte est transmise dans l'adresse du nouvel onglet ; une demande longue doit être collée. Les contenus partagés passent alors par ce service.
 - Pas de synchronisation automatique : utiliser l'export/import entre appareils.
-- Quiz à plusieurs : la bibliothèque PeerJS est chargée depuis unpkg.com au lancement d'une partie, et son service public met les navigateurs en relation ; les réponses passent ensuite directement d'un appareil à l'autre. Il faut Internet, certains réseaux d'établissement bloquent le pair à pair (essayer la 4G), et seuls des pseudos circulent. Un joueur déconnecté ne peut pas revenir dans la partie en cours.
+- Quiz à plusieurs : les messages passent par un projet Supabase (canaux « Realtime », WebSocket sur le port 443). La bibliothèque est chargée depuis cdn.jsdelivr.net au lancement d'une partie. Il faut Internet ; seuls des pseudos et le contenu des questions circulent, rien n'est enregistré. Un joueur qui perd la connexion ou dont le téléphone se met en veille retrouve sa place et ses points en revenant sur la page (même onglet). Si l'animateur ferme sa page, la partie s'arrête.
+- **Configurer le jeu à plusieurs** : créer un projet gratuit sur [supabase.com](https://supabase.com), puis copier dans `js/config.js` le « Project URL » et la clé publique (« anon » ou « publishable ») de Project Settings → API. Aucune table n'est nécessaire. Ne jamais y mettre la clé « service_role » / « secret ».
 
 Le thème CGE 2027 « Le vrai du faux » est confirmé par le [Bulletin officiel](https://www.education.gouv.fr/bo/2026/Hebdo17/ESRS2608144N). La date CGE du 11 mai 2027, de 9 h à 12 h en métropole, figure au [calendrier officiel](https://www.education.gouv.fr/bo/2026/Hebdo38/ESRE2625597A). Pour les épreuves propres au SIO et les oraux, suivre la convocation.
 
@@ -64,6 +65,7 @@ En ouvrant `index.html` directement, les PDF et audios sont simplement lus dans 
 | `index.html` | Structure et ordre de chargement |
 | `css/style.css` | Interface, thèmes, téléphone et impression |
 | `js/app.js` | État, validation, calculs, vues `V`, actions `ACT`, routage par hash (dont contrôles, quiz chrono, Mes quiz et parties à plusieurs) |
+| `js/config.js` | Adresse et clé publique du projet Supabase pour le quiz à plusieurs |
 | `js/study.js`, `css/study.css` | Brouillons, séances, relecture, écoute, recherche et préparation hors ligne |
 | `data/media.js`, `audio/*.wav` | Textes, questions et fichiers des quatre écoutes ; catalogue des médias |
 | `data/*.js` | Contenus pédagogiques chargés dans `window` |
