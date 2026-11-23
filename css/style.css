@@ -313,6 +313,20 @@ details.dossier > summary { color: var(--text); }
 .kopt[disabled] { cursor: default; }
 .kverdict { margin-top: 1rem; }
 .kniv { margin-left: .4rem; font-weight: 700; }
+/* Duel oral : scores des deux joueurs, zone réservée au prof, grille de notation */
+.duelscore { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; margin: 0 0 1rem; }
+.duelscore span { padding: .45rem .9rem; border-radius: 99px; background: var(--card); border: 1px solid var(--line); }
+.duelscore span.on { border-color: var(--accent); background: var(--soft); }
+.duelprof { margin: 1rem 0; padding: .7rem .9rem; border: 1px dashed var(--accent); border-radius: 12px; background: var(--soft); }
+.duelgrille { display: grid; gap: .6rem; margin: 1rem 0; }
+.dg { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .4rem .8rem; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 10px; }
+.dg .row { flex-wrap: nowrap; gap: .3rem; }
+@media (max-width: 600px) { .dg { grid-template-columns: minmax(0, 1fr); } }
+.dg .btn.small { min-width: 40px; }
+/* Flashcards : réponse complète (mode avancé) en retrait sous l'essentiel ; réglage du mode avancé */
+.fcard .a.full { margin-top: .8rem; padding-top: .8rem; border-top: 1px dashed var(--line2); font-size: .95em; color: var(--text2); }
+.fadv { display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; color: var(--text2); }
+.fadv input { width: 18px; height: 18px; accent-color: var(--accent); }
 .kniv.n1 { background: var(--good-bg); color: var(--good); } .kniv.n2 { background: var(--warn-bg); color: var(--warn); } .kniv.n3 { background: var(--bad-bg); color: var(--bad); }
 .knum.sm { position: static; transform: none; width: 40px; height: 40px; font-size: 1rem; }
 .mpcode { font-size: 3.4rem; font-weight: 800; letter-spacing: .08em; margin: 0 0 .5rem; color: var(--accent); font-variant-numeric: tabular-nums; }

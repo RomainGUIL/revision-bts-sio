@@ -16,11 +16,11 @@ La progression reste dans ce navigateur, sous la clé `bts-sio-revision-v1`. La 
 | Besoin | Outil |
 | --- | --- |
 | Réviser chaque jour | Tableau de bord, objectif du jour, séances guidées (express 10 min, 15 min, 30 min) |
-| Mémoriser | Flashcards FSRS et carnet d'erreurs |
+| Mémoriser | Flashcards FSRS (l'essentiel en une phrase, option « Explications avancées ») et carnet d'erreurs |
 | Comprendre | Mes matières, bibliothèque, schémas, glossaire, pièges fréquents |
 | Rédiger | Études de cas, corrections proposées, auto-évaluation |
 | Travailler en temps limité | Examen blanc, copie enregistrée pendant la saisie |
-| Préparer les oraux | Simulateur et réalisations E5/E6 |
+| Préparer les oraux | Simulateur, duel oral à deux (l'un répond, l'autre joue le prof et note avec une grille sur 20, puis on inverse) et réalisations E5/E6 |
 | Préparer un contrôle | Import de cours ; avec l'IA : dossier complet, questions en plus, ou sujet type BTS rédigé d'après les annales de la même épreuve, à passer en examen blanc avec une note pondérée par le barème |
 | Jouer et réviser en QCM | Quiz chrono façon Kahoot (ou sans chrono), seul ou à plusieurs (code de partie, via Supabase Realtime) ; « Mes quiz » pour écrire ses questions ou les faire écrire par l'IA, et les partager |
 | Pratiquer | Exercices réseau, maths/Python et TP SISR |
@@ -69,6 +69,7 @@ En ouvrant `index.html` directement, les PDF et audios sont simplement lus dans 
 | `js/study.js`, `css/study.css` | Brouillons, séances, relecture, écoute, recherche et préparation hors ligne |
 | `data/media.js`, `audio/*.wav` | Textes, questions et fichiers des quatre écoutes ; catalogue des médias |
 | `data/*.js` | Contenus pédagogiques chargés dans `window` |
+| `data/flash.js` | Réponse simple de chaque flashcard ; notions retirées des flashcards et du quiz (organisation des épreuves, conseils de méthode) |
 | `data/qcm.js` | Une question de quiz courte par notion (niveau 1 à 3, 3 pièges du même sujet) ; niveaux des sigles |
 | `data/questions.js` | Généré depuis les PDF ; ne pas modifier directement |
 | `tools/build_questions.py` | Régénération des questions ; nécessite `pypdf` |

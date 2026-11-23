@@ -34,7 +34,7 @@ var STORE_KEY = 'bts-sio-revision-v1';
    S.quiz    : mes quiz [ { id, titre, qs: [ { q, opts: [4 textes, vides si non utilisés], ok: n° de la bonne, ex: explication, lim: secondes ou 0 = temps de la partie } ] } ] ; S.kbest : records du quiz chrono
    S.ctrl    : mes contrôles [ { id, titre, mat, date, consignes, texte, dossiers: [ { n, d, fiche, cards, qs } ], fs: { ok, ko } } ] */
 function blank() { return { theme: 'light', option: '', ep: 'E7', mat: 'cyber', learned: {}, cards: {}, history: [], qdone: {}, answers: {}, exam: '', fstats: {}, tpdone: {}, layout: 'bas', zoom: '',
-  fhist: {}, ostats: {}, day: {}, ia: 'chatgpt', examRun: null, examHist: [], ctrl: [], exstats: {}, days: {}, memo: {}, reals: [], planDone: {}, kbest: {}, quiz: [], lastBackup: 0, study: StudyTools.blank() }; }
+  fhist: {}, ostats: {}, day: {}, ia: 'chatgpt', examRun: null, examHist: [], ctrl: [], exstats: {}, days: {}, memo: {}, reals: [], planDone: {}, kbest: {}, quiz: [], flashPlus: false, lastBackup: 0, study: StudyTools.blank() }; }
 var S = blank();
 var loadError = false;
 try { S = readState(JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); } catch (e) { loadError = true; }
@@ -115,7 +115,7 @@ function storageWarning(message) {
 var study;
 function save() { if (loadError) return false; if (study) study.capture(); try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); memoBox.pending = false; storageWarning(''); return true; } catch (e) { storageWarning('Enregistrement impossible dans ce navigateur. Exporte ta progression depuis « Réglages et sauvegarde » avant de fermer.'); return false; } }
 function daysUntil(date) { if (!date) return null; var p = date.split('-').map(Number), d = new Date(); return Math.round((Date.UTC(p[0], p[1] - 1, p[2]) - Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) / DAY); }
-function resetTransient() { if (study) study.cancelPending(); session = null; flash = null; oral = null; kh = null; exo = null; express = null; examRes = null; if (reco) reco.stop(); py = { tab: 'fiche', i: 0, rep: null, done: false, code: {} }; }
+function resetTransient() { if (study) study.cancelPending(); session = null; flash = null; oral = null; duel = null; kh = null; exo = null; express = null; examRes = null; if (reco) reco.stop(); py = { tab: 'fiche', i: 0, rep: null, done: false, code: {} }; }
 
 function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function dayCount(k) { if (S.day.d !== today()) S.day = { d: today(), flash: 0, q: 0, oral: 0 }; S.day[k] = (S.day[k] || 0) + 1; S.days = S.days || {}; S.days[today()] = (S.days[today()] || 0) + 1; }
@@ -219,6 +219,9 @@ var flash = null;     // paquet de flashcards en cours
 function matOK(m) { var o = MATIERES[m][3]; return !o || !S.option || o === S.option; }
 function sujOK(s) { return s.ctrl ? true : s.ent ? matOK(s.mat) : (s.option === 'CEJM' || !S.option || s.option === S.option); }
 function mesNotions() { return NOT.filter(function (n) { return matOK(n.mat); }); }
+/* Notions travaillées en flashcards et au quiz : toutes sauf celles qui ne se mémorisent pas par répétition (data/flash.js, FLASH_HORS). Elles restent dans la bibliothèque. */
+function horsFlash(id) { return Object.prototype.hasOwnProperty.call(window.FLASH_HORS || {}, id); }
+function flashNotions() { return mesNotions().filter(function (n) { return !horsFlash(n.id); }); }
 function mesQuestions() { return QUESTIONS.filter(function (q) { return sujOK(SUJETS[q.sujet]); }); }
 function matsOf(ep) { return Object.keys(MATIERES).filter(function (m) { return MATIERES[m][2] === ep && matOK(m); }); }
 function sujetLabel(s) { return s.bts ? 'Sujet type BTS — ' + s.cas : s.ctrl ? 'Contrôle — ' + s.cas : s.ent ? 'Entraînement ' + EP_COURT[s.epreuve] + (s.option ? ' ' + s.option : '') + ' — ' + s.cas : (s.option === 'CEJM' ? 'E4 CEJM' : 'E7 ' + s.option) + ' ' + s.annee + (s.autre ? ' (autres BTS)' : '') + ' — ' + s.cas; }
@@ -290,7 +293,7 @@ function docFrame(sid, key) {
 }
 function dueCards(mat, ep) {
   var now = Date.now();
-  return mesNotions().filter(function (n) { return !S.learned[n.id] && (!mat || n.mat === mat) && (!ep || MATIERES[n.mat][2] === ep) && (!S.cards[n.id] || S.cards[n.id].d <= now); })
+  return flashNotions().filter(function (n) { return !S.learned[n.id] && (!mat || n.mat === mat) && (!ep || MATIERES[n.mat][2] === ep) && (!S.cards[n.id] || S.cards[n.id].d <= now); })
     .sort(function (a, b) { return b.imp - a.imp; });
 }
 /* Rythme de révision : algorithme FSRS-6, transcrit de l'implémentation de référence py-fsrs (open-spaced-repetition, paramètres par défaut).
@@ -398,7 +401,7 @@ var NAV = [
 ];
 /* Menu repliable (divulgation progressive) : seul le groupe de la page en cours est ouvert, les autres se déplient au clic. */
 var navOpen = {}, curRoute = 'accueil';
-var NAV_ALIAS = { express: 'seance', animer: 'chrono', rejoindre: 'chrono', apprises: 'biblio', matiere: 'matieres', notion: 'biblio', question: 'annales' };
+var NAV_ALIAS = { duel: 'oral', express: 'seance', animer: 'chrono', rejoindre: 'chrono', apprises: 'biblio', matiere: 'matieres', notion: 'biblio', question: 'annales' };
 function groupOf(r) { r = NAV_ALIAS[r] || r; var g = NAV.filter(function (x) { return x[1].some(function (y) { return y[0] === r; }); })[0]; return g ? g[0] : ''; }
 function isNavOpen(g) { return !g || (navOpen[g] != null ? navOpen[g] : groupOf(curRoute) === g); }
 function renderNav() {
@@ -543,7 +546,7 @@ V.flash = function (mode, arg) {
   if (mode === 'guide') {
     key = 'guide'; build = function () { return []; }; head = '<div class="narrow"><h1>Ma séance · flashcards</h1>';
   } else if (mode === 'express') {
-    key = 'express'; build = function () { var d = dueCards(); return (d.length ? d : shuffle(mesNotions().filter(function (n) { return !S.learned[n.id]; }))).slice(0, 5); };
+    key = 'express'; build = function () { var d = dueCards(); return (d.length ? d : shuffle(flashNotions().filter(function (n) { return !S.learned[n.id]; }))).slice(0, 5); };
     head = '<div class="narrow"><p><a href="#express">← Révision express</a></p><h1>Étape 1 : 5 flashcards</h1>';
   } else if (mode === 'erreurs') {   // carnet d'erreurs : cartes ratées pas encore réussies deux fois de suite
     key = 'erreurs'; build = function () { return carteErreurs(); };
@@ -568,22 +571,30 @@ V.flash = function (mode, arg) {
   if (!flash.deck.length && mode === 'deck') return head + '<div class="card"><p><b>Paquet terminé pour aujourd\'hui, bravo !</b></p><p class="muted">Les cartes reviendront quand il sera temps de les revoir.</p><div class="row"><a class="btn" href="#flash">Revenir aux paquets</a><button class="btn ghost" data-a="fall" data-v="' + arg + '">Revoir quand même tout le paquet</button></div></div></div>';
   if (!flash.deck.length) return head + '<div class="card"><p><b>Bravo, plus rien à revoir ici pour le moment !</b></p><p class="muted">Toutes les cartes de cette sélection sont sues ou apprises. Reviens demain pour la prochaine révision, ou choisis une autre sélection.</p>' + (mode ? '' : '<button class="btn ghost" data-a="freset">Revoir quand même toutes les cartes</button>') + '</div></div>';
   var n = flash.deck[flash.i], ex = n.ex || EXP[n.id];
+  /* Dos de la carte : par défaut l'essentiel en une ou deux phrases (data/flash.js) et un exemple ; avec « Explications avancées »
+     (réglage gardé, ou « Plus d'explications » pour cette carte seulement) : réponse complète, en clair, piège et schéma. */
+  var simple = (window.FLASH_SIMPLE || {})[n.id], avance = S.flashPlus || flash.plus || !simple;
+  var dos = '<div class="a"><div class="alab">' + (simple ? 'L\'essentiel' : 'La réponse') + '</div>' + esc(simple || n.a) + '</div>' +
+    (avance ? (simple ? '<div class="a full"><div class="alab">La réponse complète</div>' + esc(n.a) + '</div>' : '') : '');
+  var apres = avance ? (ex && (ex[0] || ex[1] || ex[2]) ? explication(ex) : '') + schemaHtml(n.id)
+    : (ex && ex[1] ? '<div class="exbox"><span class="elab">Exemple</span><p>' + esc(ex[1]) + '</p></div>' : '') + '<div class="row center" style="margin-bottom:.8rem"><button class="btn ghost small" data-a="fplus">+ Plus d\'explications</button></div>';
+  var regl = '<label class="fadv small"><input type="checkbox" id="flashPlus"' + (S.flashPlus ? ' checked' : '') + '> Explications avancées (réponse complète, piège, schéma)</label>';
   return head +
     '<div class="row sp fmeta"><span class="small muted">Carte ' + (flash.i + 1) + ' sur ' + flash.deck.length + (flash.total > flash.deck.length ? ' (' + flash.total + ' à revoir en tout)' : '') + '</span><span class="tag i' + n.imp + '">' + IMP[n.imp] + '</span></div>' +
     '<div class="bar"><i style="width:' + (flash.i / flash.deck.length * 100) + '%"></i></div>' +
     '<div class="fcard' + (flash.shown ? ' open' : '') + '" data-a="flip" tabindex="0" role="button" aria-label="Retourner la carte">' +
       '<div class="fcat">' + esc(matLabel(n.mat)) + ' · ' + esc(n.cat) + '</div>' +
       '<div class="q">' + esc(n.q) + '</div>' +
-      (flash.shown ? '<div class="a"><div class="alab">La réponse</div>' + esc(n.a) + '</div>' : '<div class="fhint">Dis ta réponse à voix haute et explique pourquoi, puis clique (ou Espace) pour vérifier.</div>') + '</div>' +
+      (flash.shown ? dos : '<div class="fhint">Dis ta réponse à voix haute et explique pourquoi, puis clique (ou Espace) pour vérifier.</div>') + '</div>' +
     (!flash.shown && ex && ex[1] ? (flash.ex ? '<div class="exbox"><span class="elab">Exemple (indice)</span><p>' + esc(ex[1]) + '</p></div>' : '<div class="row center" style="margin-bottom:.8rem"><button class="btn ghost small" data-a="fex">Voir un exemple</button></div>') : '') +
-    (flash.shown && ex && (ex[0] || ex[1] || ex[2]) ? explication(ex) : '') + (flash.shown ? schemaHtml(n.id) + memoBox(n.id, 'Ma note perso sur cette notion (avec mes mots, un exemple de mon stage…)') : '') +
+    (flash.shown ? apres + memoBox(n.id, 'Ma note perso sur cette notion (avec mes mots, un exemple de mon stage…)') : '') +
     (flash.shown ? '<p class="small muted center-t">Alors, c\'était comment ?</p><div class="fbtns g4">' + [[0, 'Pas encore', 'ghost'], [1, 'Difficile', 'ghost'], [2, 'Bien', ''], [3, 'Facile', 'ghost']].map(function (b) {
         return '<button class="btn ' + b[2] + '" data-a="fgrade" data-v="' + b[0] + '"><span>' + b[1] + '</span><small>' + (b[0] ? fmtJours(nextCardState(S.cards[n.id], b[0]).ivl) : 'je la revois') + '</small></button>'; }).join('') + '</div>' +
       '<div class="row center" style="margin-top:.7rem"><button class="btn ghost small" data-a="flearn">Je la maîtrise ✓ (la ranger)</button>' + videoLink(n) +
         iaBtn('cardex', IA_INTRO + 'Donne-moi 3 exemples concrets et variés (vie courante, entreprise, examen BTS SIO) pour bien comprendre cette notion : « ' + n.q + ' » — réponse : « ' + n.a + ' ». Explique chaque exemple en deux phrases.', 'D\'autres exemples (IA)') +
         iaBtn('card', IA_INTRO + 'Je révise ' + (n.ctrl ? 'un contrôle (' + n.cat + ')' : 'l\'épreuve ' + matLabel(n.mat)) + '. Explique-moi simplement cette notion comme un bon professeur : « ' + n.q + ' » — réponse attendue : « ' + n.a + ' ». Donne une analogie de la vie courante, un exemple concret en entreprise, comment elle peut tomber à l\'examen et l\'erreur à ne pas faire. Termine en me posant 3 questions pour vérifier que j\'ai compris, sans donner les réponses : j\'y répondrai et tu me corrigeras.', 'Explique-moi avec l\'IA') + '</div>'
       : '<div class="fbtns"><button class="btn" data-a="flip">Voir la réponse et l\'explication</button></div>') +
-    '<p class="small muted fhelp">Sous chaque bouton : quand la carte reviendra, calculé par l\'algorithme FSRS (le même que dans Anki) pour que tu la revoies juste avant de l\'oublier. « Pas encore » la remet un peu plus loin dans le paquet, c\'est normal. « Je la maîtrise » la range dans les notions apprises.</p></div>';
+    '<p class="center-t">' + regl + '</p><p class="small muted fhelp">Sous chaque bouton : quand la carte reviendra, calculé par l\'algorithme FSRS (le même que dans Anki) pour que tu la revoies juste avant de l\'oublier. « Pas encore » la remet un peu plus loin dans le paquet, c\'est normal. « Je la maîtrise » la range dans les notions apprises.</p></div>';
 };
 var SCH = window.SCHEMAS || {};
 function schemaHtml(id) { return SCH[id] ? '<figure class="schema-f">' + SCH[id][1] + '<figcaption>' + esc(SCH[id][0]) + '</figcaption></figure>' : ''; }
@@ -844,7 +855,7 @@ function questionsErreurs() {   // les erreurs commises avec assurance d'abord (
   return Object.keys(S.answers).map(qById).filter(function (q) { return q && enErreur(S.answers[q.id].map(function (a) { return a.note; })); }).sort(function (a, b) { return sure(b) - sure(a); });
 }
 function carteErreurs() {
-  return Object.keys(S.fhist).filter(function (id) { return enErreur(S.fhist[id]); })
+  return Object.keys(S.fhist).filter(function (id) { return enErreur(S.fhist[id]) && !horsFlash(id); })
     .map(function (id) { return NOT.filter(function (n) { return n.id === id; })[0] || CTRLC[id]; }).filter(Boolean);
 }
 V.erreurs = function () {
@@ -940,6 +951,7 @@ V.oral = function () {
   var L = oralList(oral.mat), q = oral.i >= 0 ? L[oral.i] : null, st = S.ostats[oral.mat === 'mesreal' ? realMat() : oral.mat];
   var jury = q ? IA_INTRO + 'Joue le rôle du jury de l\'épreuve ' + matLabel(oral.mat) + '. Pose-moi cette question : « ' + q[0] + ' ». Attends ma réponse (je vais l\'écrire ou la dicter), puis relance-moi avec 2 questions de suivi comme un vrai jury, une à la fois. À la fin, évalue ma prestation (contenu, justification, vocabulaire, clarté) avec une note sur 20 et 3 conseils concrets.' + (oral.mat === 'anglais' ? ' Toute la discussion doit être en anglais, et corrige mes erreurs d\'anglais à la fin.' : '') : '';
   return '<h1>Simulateur d\'oral</h1><p class="lead">Une question de jury au hasard. Réponds <b>à voix haute</b> avant la fin du chrono, comme devant le jury, puis compare avec les éléments attendus et évalue-toi. Pour un vrai dialogue avec relances, utilise le jury IA.</p>' +
+    '<div class="card hint row sp"><span><b>Vous êtes deux ?</b> Faites un duel : chacun son tour, l\'un répond et l\'autre joue le prof et note.</span><a class="btn" href="#duel">Duel oral à deux</a></div>' +
     '<div class="chips">' + mats.map(function (m) { return '<button class="chip' + (m === oral.mat ? ' on' : '') + '" data-a="omat" data-v="' + m + '">' + esc(matLabel(m)) + ' <i>' + oralList(m).length + '</i></button>'; }).join('') + '</div>' +
     '<div class="row" style="margin-bottom:1rem"><label class="small muted">Temps de réponse <select id="oDur">' + [60, 120, 180, 300].map(function (d) { return '<option value="' + d + '"' + (d === oral.dur ? ' selected' : '') + '>' + d / 60 + ' min</option>'; }).join('') + '</select></label>' +
     (st && st.n ? '<span class="small muted">Ta moyenne à l\'oral ici : <b>' + sur20(st.sum / st.n) + ' / 20</b> sur ' + st.n + ' question(s)</span>' : '') + '</div>' +
@@ -955,6 +967,52 @@ V.oral = function () {
         '<p class="small muted">Comment t\'es-tu débrouillé ?</p><div class="row">' +
         [[1, 'Bien, j\'avais l\'essentiel'], [0.5, 'Moyen, il manquait des éléments'], [0, 'À retravailler']].map(function (o) { return '<button class="btn ' + (o[0] === 1 ? '' : 'ghost') + '" data-a="oeval" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div>') +
       '<div class="row" style="margin-top:1rem">' + iaBtn('jury', jury, 'Jury IA : simuler l\'oral avec relances') + '<button class="btn ghost small" data-a="onext">Autre question</button></div></div>');
+};
+
+/* — Duel oral : deux élèves sur le même appareil. À chaque tour, l'un répond à une question de jury, l'autre joue le prof :
+   il lit la question, garde les éléments attendus sous les yeux, puis note avec une grille sur 20. Ensuite les rôles s'inversent.
+   duel = { mat, noms: [a, b], tours (par joueur), dur (s), L (questions tirées), i (tour), etape: 'pret' | 'question' | 'note' | 'fin', t0, notes: [[…], […]] } */
+var duel = null;
+var DUEL_GRILLE = [['contenu', 'Contenu', 'Les éléments attendus sont là'], ['justif', 'Justification', 'Il explique pourquoi, avec des exemples'], ['vocab', 'Vocabulaire', 'Termes techniques justes'], ['clarte', 'Clarté', 'Réponse structurée, posée, sans lire']];
+function duelCand() { return duel.i % 2; }   // 0 : le joueur A répond, 1 : le joueur B répond
+V.duel = function () {
+  var head = pageHead('Duel oral', 'À deux sur le même appareil : chacun son tour, l\'un répond comme devant le jury, l\'autre joue le prof. Le prof lit la question, garde les éléments attendus sous les yeux, puis note avec la grille. Ensuite on inverse.');
+  var mats = oralMats().filter(function (m) { return m !== 'mesreal'; });
+  if (!duel) {
+    var o = V.duel.o || { a: '', b: '', mat: mats[0], tours: 3, dur: 120 };
+    return head + '<div class="card"><div class="filters"><label>Joueur 1<input id="dA" maxlength="20" placeholder="Prénom" value="' + esc(o.a) + '"></label><label>Joueur 2<input id="dB" maxlength="20" placeholder="Prénom" value="' + esc(o.b) + '"></label></div>' +
+      '<div class="filters"><label>Épreuve<select id="dM">' + mats.map(function (m) { return '<option value="' + m + '"' + (m === o.mat ? ' selected' : '') + '>' + esc(matLabel(m)) + ' (' + ORAL[m].length + ' questions)</option>'; }).join('') + '</select></label>' +
+      '<label>Questions par joueur<select id="dT">' + [2, 3, 5].map(function (n) { return '<option' + (n === o.tours ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label>' +
+      '<label>Temps de réponse<select id="dD">' + [60, 120, 180].map(function (d) { return '<option value="' + d + '"' + (d === o.dur ? ' selected' : '') + '>' + d / 60 + ' min</option>'; }).join('') + '</select></label>' +
+      '<button class="btn" data-a="dstart">Commencer le duel</button></div></div><p><a href="#oral">← Simulateur d\'oral (seul)</a></p>';
+  }
+  var c = duelCand(), cand = duel.noms[c], prof = duel.noms[1 - c], q = duel.L[duel.i], quit = '<button class="btn ghost small" data-a="dquit">Arrêter le duel</button>';
+  var tour = '<p class="small muted">Tour ' + (duel.i + 1) + ' sur ' + duel.L.length + ' · ' + esc(matLabel(duel.mat)) + '</p>';
+  var score = '<div class="duelscore">' + [0, 1].map(function (j) { var n = duel.notes[j]; return '<span' + (j === c && duel.etape !== 'fin' ? ' class="on"' : '') + '><b>' + esc(duel.noms[j]) + '</b> ' + (n.length ? sur20(n.reduce(function (t, x) { return t + x.note; }, 0) / n.length / 20) + ' / 20' : '—') + '</span>'; }).join('') + '</div>';
+  if (duel.etape === 'fin') {
+    var moy = [0, 1].map(function (j) { var n = duel.notes[j]; return n.length ? n.reduce(function (t, x) { return t + x.note; }, 0) / n.length : 0; });
+    var gagnant = moy[0] === moy[1] ? 'Égalité parfaite !' : esc(duel.noms[moy[0] > moy[1] ? 0 : 1]) + ' remporte le duel !';
+    return head + '<div class="card kready"><p class="kbig">' + gagnant + '</p>' + score + '</div>' +
+      [0, 1].map(function (j) { return '<h2>' + esc(duel.noms[j]) + '</h2><div class="card"><table><tr><th>Question</th><th>Note</th><th>Conseil du prof</th></tr>' + duel.notes[j].map(function (x) { return '<tr><td>' + esc(x.q) + '</td><td class="n">' + x.note + ' / 20</td><td>' + (x.conseil ? esc(x.conseil) : '<span class="muted">—</span>') + '</td></tr>'; }).join('') + '</table></div>'; }).join('') +
+      '<div class="row"><button class="btn" data-a="drevanche">Revanche (nouvelles questions)</button><button class="btn ghost" data-a="dquit">Changer les réglages</button></div>';
+  }
+  if (duel.etape === 'pret') return head + score + '<div class="card kready">' + tour + '<p class="kbig">' + esc(cand) + ' répond</p><p><b>' + esc(prof) + '</b> joue le prof : prends l\'appareil, lis la question à voix haute et lance le chrono.</p>' +
+    '<div class="row" style="justify-content:center"><button class="btn big" data-a="dgo">Afficher la question</button>' + quit + '</div></div>';
+  if (duel.etape === 'question') {
+    var r = duel.t0 + duel.dur * 1000 - Date.now();
+    return head + score + '<div class="card oral">' + tour + '<p class="small muted">Question du jury pour ' + esc(cand) + '</p><p class="oq">« ' + esc(q[0]) + ' »</p>' +
+      '<div class="row"><span class="timer" id="dtimer">' + fmtTime(r) + '</span><button class="btn" data-a="dfin">' + esc(cand) + ' a fini de répondre</button></div>' +
+      '<details class="duelprof"><summary>Réservé au prof (' + esc(prof) + ') : éléments attendus</summary><p>' + esc(q[1]) + '</p><p class="small muted">Pendant la réponse, coche mentalement ce qui est dit. Tu pourras relancer avec une question, comme un vrai jury.</p></details>' + quit + '</div>';
+  }
+  // etape === 'note'
+  var g = duel.grille, total = DUEL_GRILLE.reduce(function (t, x) { return t + (g[x[0]] || 0); }, 0), complet = DUEL_GRILLE.every(function (x) { return g[x[0]] != null; });
+  return head + score + '<div class="card">' + tour + '<p class="small muted">' + esc(prof) + ' note la réponse de ' + esc(cand) + '</p><p class="qtext">« ' + esc(q[0]) + ' »</p>' +
+    '<div class="corr"><b class="small">Éléments attendus (à lire ensemble après la note)</b><p>' + esc(q[1]) + '</p></div>' +
+    '<div class="duelgrille">' + DUEL_GRILLE.map(function (x) {
+      return '<div class="dg"><div><b>' + x[1] + '</b><span class="small muted"> · ' + x[2] + '</span></div><div class="row">' + [0, 1, 2, 3, 4, 5].map(function (v) { return '<button class="btn ghost small' + (g[x[0]] === v ? ' on' : '') + '" data-a="dnote" data-k="' + x[0] + '" data-v="' + v + '" aria-label="' + x[1] + ' : ' + v + ' sur 5">' + v + '</button>'; }).join('') + '</div></div>';
+    }).join('') + '</div>' +
+    '<label class="small muted" for="dConseil">Un conseil pour ' + esc(cand) + ' (facultatif)</label><input id="dConseil" maxlength="200" placeholder="ex. Cite un exemple de ton stage" value="' + esc(duel.conseil || '') + '">' +
+    '<div class="row sp" style="margin-top:.8rem"><span class="kscore">' + total + ' / 20</span><button class="btn big" data-a="dvalider"' + (complet ? '' : ' disabled') + '>' + (duel.i + 1 < duel.L.length ? 'Valider et passer la main' : 'Valider et voir le résultat') + '</button></div></div>';
 };
 
 /* — Méthode — */
@@ -1344,7 +1402,7 @@ function qcmBuild(src) {
       return { q: 'Que signifie « ' + g[0] + ' » ?', ok: g[1], opts: shuffle([g[1]].concat(faux)), ex: g[2], niv: x.niv };
     });
   } else {
-    var pool = mesNotions().filter(function (n) { return MATIERES[n.mat][2] === src && window.QCM && QCM[n.id]; });
+    var pool = flashNotions().filter(function (n) { return MATIERES[n.mat][2] === src && window.QCM && QCM[n.id]; });
     items = tirageProgressif(pool.map(function (n) { return { n: n, niv: QCM[n.id][0] }; }), 10).map(function (x) {
       var Q = QCM[x.n.id];
       return { q: Q[1], ok: Q[2], opts: shuffle(Q.slice(2, 6)), ex: x.n.a, niv: Q[0], n: x.n };   // explication = la fiche complète de la notion
@@ -1948,7 +2006,7 @@ V.pentest = function () {
    Un « paquet » se désigne par : 'all' (tout), 'E7' (une épreuve), 'cyber' (une matière) ou 'cyber.2' (le 3e thème de la matière). */
 function themesOf(m) { return NOT.filter(function (n) { return n.mat === m; }).map(function (n) { return n.cat; }).filter(function (c, i, a) { return a.indexOf(c) === i; }); }
 function deckCards(arg) {
-  var L = mesNotions();
+  var L = flashNotions();
   if (!arg || arg === 'all') return L;
   if (EPREUVES[arg]) return L.filter(function (n) { return MATIERES[n.mat][2] === arg; });
   var p = String(arg).split('.'), m = p[0];
@@ -1979,7 +2037,7 @@ function deckRow(arg, titre, s, extra) {
     '<a class="btn small' + (a ? '' : ' ghost') + '" href="#flash/deck/' + arg + '">' + (a ? 'Réviser ' + Math.min(a, 20) : 'Revoir') + '</a>' + (extra || '') + '</div>';
 }
 function flashDecks() {
-  var all = deckStats(mesNotions()), err = carteErreurs().length;
+  var all = deckStats(flashNotions()), err = carteErreurs().length;
   return pageHead('Flashcards', 'Tes cartes sont rangées comme dans Anki : épreuve › matière › grand thème. Réviser une matière révise tous ses thèmes. Dans chaque paquet : <b class="t-rev">à revoir</b> aujourd\'hui, <b class="t-new">nouvelles</b>, <b class="t-ok">maîtrisées</b>.') +
     '<div class="decktop"><a class="card tile big" href="#flash/deck/all"><b>Tout réviser (mélangé)</b><span>' + (all.revoir + all.nouv) + ' cartes à voir aujourd\'hui, toutes matières alternées : la meilleure option au quotidien.</span></a>' +
       '<a class="card tile" href="#flash/express"><b>Révision express</b><span>5 cartes, pour 2 minutes</span></a>' +
@@ -2123,7 +2181,7 @@ function render(keepScroll) {
 function rerender() { var y = window.scrollY; render(true); window.scrollTo(0, y); }
 function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
 function applyTheme() { document.documentElement.dataset.theme = S.theme; $('#themeBtn').textContent = S.theme === 'dark' ? 'Thème clair' : 'Thème sombre'; $('#optSel').value = S.option; }
-function nextCard() { flash.ex = false; flash.deck.splice(flash.i, 1); flash.total = Math.max(0, flash.total - 1); flash.shown = false; if (flash.i >= flash.deck.length) flash.i = 0; rerender(); }
+function nextCard() { flash.ex = false; flash.plus = false; flash.deck.splice(flash.i, 1); flash.total = Math.max(0, flash.total - 1); flash.shown = false; if (flash.i >= flash.deck.length) flash.i = 0; rerender(); }
 function download(name, text, type) {
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type: type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
@@ -2272,6 +2330,28 @@ var ACT = {
   gdom: function (el) { V.glossaire.f.d = el.dataset.v; rerender(); },
   errm: function (el) { V.erreursfreq.m = el.dataset.v; rerender(); },
   fex: function () { flash.ex = true; rerender(); },
+  fplus: function () { flash.plus = true; rerender(); },
+  dstart: function () {
+    var a = $('#dA').value.trim().slice(0, 20), b = $('#dB').value.trim().slice(0, 20);
+    if (!a || !b) { toast('Indique les prénoms des deux joueurs.'); (a ? $('#dB') : $('#dA')).focus(); return; }
+    V.duel.o = { a: a, b: b, mat: $('#dM').value, tours: +$('#dT').value, dur: +$('#dD').value };
+    ACT.drevanche();
+  },
+  drevanche: function () {   // nouvelles questions, mêmes joueurs ; les rôles alternent à chaque tour
+    var o = V.duel.o, L = shuffle(ORAL[o.mat]).slice(0, o.tours * 2);
+    duel = { mat: o.mat, noms: [o.a, o.b], dur: o.dur, L: L, i: 0, etape: 'pret', notes: [[], []], grille: {} };
+    rerender();
+  },
+  dgo: function () { duel.etape = 'question'; duel.t0 = Date.now(); rerender(); },
+  dfin: function () { duel.etape = 'note'; duel.grille = {}; duel.conseil = ''; rerender(); },
+  dnote: function (el) { var t = $('#dConseil'); if (t) duel.conseil = t.value; duel.grille[el.dataset.k] = +el.dataset.v; rerender(); },
+  dvalider: function () {
+    var t = $('#dConseil'), g = duel.grille, note = DUEL_GRILLE.reduce(function (s, x) { return s + (g[x[0]] || 0); }, 0);
+    duel.notes[duelCand()].push({ q: duel.L[duel.i][0], note: note, conseil: t ? t.value.trim() : '' });
+    if (++duel.i >= duel.L.length) duel.etape = 'fin'; else { duel.etape = 'pret'; duel.grille = {}; duel.conseil = ''; }
+    render();
+  },
+  dquit: function () { if (duel && duel.etape !== 'fin' && !confirm('Arrêter le duel en cours ?')) return; duel = null; rerender(); },
   qexo: function () { keepRep(); session.ex = !session.ex; rerender(); },
   date27: function () { S.exam = '2027-05-11'; save(); rerender(); toast('Date d\'examen réglée sur le mardi 11 mai 2027.'); },
   pytab: function (el) { py.tab = el.dataset.v; py.i = 0; py.rep = null; py.done = false; rerender(); },
@@ -2312,7 +2392,7 @@ var ACT = {
   flip: function () { flash.shown = !flash.shown; rerender(); },
   fgrade: function (el) {
     var g = +el.dataset.v, n = flash.deck[flash.i]; S.cards[n.id] = nextCardState(S.cards[n.id], g); cardResult(n, g ? 1 : 0); save();
-    if (g) nextCard(); else { flash.deck.push(flash.deck.splice(flash.i, 1)[0]); flash.shown = false; if (flash.i >= flash.deck.length) flash.i = 0; rerender(); }
+    if (g) nextCard(); else { flash.deck.push(flash.deck.splice(flash.i, 1)[0]); flash.shown = false; flash.plus = false; flash.ex = false; if (flash.i >= flash.deck.length) flash.i = 0; rerender(); }
   },
   fok: function () { ACT.fgrade({ dataset: { v: '2' } }); },
   fko: function () { ACT.fgrade({ dataset: { v: '0' } }); },
@@ -2367,6 +2447,7 @@ document.addEventListener('change', function (e) {
   if (t.dataset && t.dataset.plan) { S.planDone = S.planDone || {}; if (t.checked) S.planDone[t.dataset.plan] = 1; else delete S.planDone[t.dataset.plan]; save(); rerender(); }
   if (t.id === 'kImp' && t.files[0]) { var fk = new FileReader(); fk.onload = function () { try { var c = ctrlImport(String(fk.result)); toast('Contrôle « ' + c.titre + ' » importé.'); go('#controles/' + c.id); } catch (x) { alert('Import impossible : ' + x.message); } }; fk.readAsText(t.files[0]); }
   if (t.id === 'khLim' && kh) kh.lim = +t.value;
+  if (t.id === 'flashPlus') { S.flashPlus = t.checked; save(); rerender(); }
   if (t.id === 'kMode') { keepK(location.hash.split('/')[1]); V.controles.o.mode = t.value; rerender(); }
   if (t.classList && t.classList.contains('qz')) quizField(t);
   if (t.id === 'zImp' && t.files[0]) { var fz = new FileReader(); fz.onload = function () { try { var z = quizImport(String(fz.result)); toast('Quiz « ' + z.titre + ' » importé.'); go('#quiz/' + z.id); } catch (x) { alert('Import impossible : ' + x.message); } }; fz.readAsText(t.files[0]); }
@@ -2443,6 +2524,8 @@ setInterval(function () {
   var t = $('#timer');
   if (S.examRun) { var r = S.examRun.start + S.examRun.dur - Date.now(); if (t) { t.textContent = fmtTime(r); t.classList.toggle('low', r < 600000); }
     if (r <= 0) { examRendre(); render(); toast('Temps écoulé : ta copie a été rendue automatiquement. Résultats dans Examen blanc.'); } }
+  var dt = $('#dtimer');
+  if (dt && duel && duel.etape === 'question') { var rd = duel.t0 + duel.dur * 1000 - Date.now(); dt.textContent = rd > 0 ? fmtTime(rd) : 'Temps écoulé'; dt.classList.toggle('low', rd < 20000); }
   var o = $('#otimer');
   if (o && oral && !oral.fini) { var ro = oral.t0 + oral.dur * 1000 - Date.now(); o.textContent = ro > 0 ? fmtTime(ro) : 'Temps écoulé'; o.classList.toggle('low', ro < 20000); }
 }, 1000);

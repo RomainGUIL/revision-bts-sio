@@ -102,6 +102,26 @@ test('Quiz rounds rise in difficulty and get a time suited to each question',()=
  const court=T.tempsAuto({q:'IP ?',opts:['a','b','c','d'],niv:1}), long=T.tempsAuto({q:'x'.repeat(100),opts:['y'.repeat(80),'y'.repeat(80),'y'.repeat(80),'y'.repeat(80)],niv:3});
  assert(court<long && court===10 && long<=45);
 });
+test('Flashcards: useful notions get a short simple answer, the others leave the decks and the quiz',()=>{
+ const ids=Array.from(T.NOT,n=>n.id), hors=Object.keys(ctx.FLASH_HORS), simple=ctx.FLASH_SIMPLE;
+ assert.equal(hors.filter(id=>!ids.includes(id)).join(','),'','notion exclue inconnue');
+ assert.equal(ids.filter(id=>!hors.includes(id) && !simple[id]).join(', '),'','réponse simple manquante');
+ assert.equal(Object.keys(simple).filter(id=>!ids.includes(id) || hors.includes(id)).join(', '),'','réponse simple en trop');
+ for (const [id,s] of Object.entries(simple)) { const long=T.NOT.find(n=>n.id===id).a.length; assert(s.length<=220,id+' : trop long ('+s.length+')'); assert(s.length<long,id+' : pas plus court que la fiche'); }
+ const s=T.blank(); T.setState(s);
+ assert(!T.V.flash('deck','all').includes('Comment se déroule l\'épreuve de culture générale'));
+ for (let k=0;k<5;k++) assert(T.qcmBuild('E1').items.every(it=>!/Durée de l'épreuve/.test(it.q)));
+ T.setState(T.blank()); T.resetTransient();
+});
+test('Oral duel alternates roles and scores each answer out of 20',()=>{
+ T.V.duel.o={a:'Alice',b:'Bob',mat:'e5',tours:2,dur:60}; T.ACT.drevanche();
+ assert(T.V.duel().includes('Alice répond'));
+ const tour=(notes)=>{ T.ACT.dgo(); assert(T.V.duel().includes('Réservé au prof')); T.ACT.dfin(); ['contenu','justif','vocab','clarte'].forEach((k,i)=>T.ACT.dnote({dataset:{k,v:String(notes[i])}})); T.ACT.dvalider(); };
+ tour([5,5,4,4]); assert(T.V.duel().includes('Bob répond'));
+ tour([3,3,2,2]); tour([5,4,4,4]); tour([2,2,2,2]);
+ const fin=T.V.duel(); assert(fin.includes('Alice remporte le duel'),fin.slice(0,300)); assert(fin.includes('18 / 20') && fin.includes('17 / 20') && fin.includes('10 / 20') && fin.includes('8 / 20'));
+ T.ACT.dquit(); assert(T.V.duel().includes('Commencer le duel'));
+});
 test('Custom quizzes are validated, imported from AI text and saved',()=>{
  const qs=T.parseQuiz('{"questions":[{"q":"Port DHCP serveur ?","reponses":["67","68","53","80"],"bonne":0},{"q":"Bail illimité ?","reponses":["Vrai","Faux"],"bonne":"Faux"},{"q":"","reponses":["a","b"]}]}');
  assert.equal(qs.length,2); assert.equal(qs[1].ok,1); assert.deepEqual(qs[1].opts,['Vrai','Faux','','']);
