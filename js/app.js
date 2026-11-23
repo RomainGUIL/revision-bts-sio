@@ -1319,21 +1319,38 @@ V.exos = function () {
 
 /* — Questions à choix multiples : 10 questions tirées des notions d'une épreuve (ou des sigles), 4 propositions.
    Jouées dans le Quiz chrono, avec ou sans compte à rebours (l'ancien « QCM rapide » est le mode « Sans chrono »). */
+/* Tirage de 10 questions qui montent en difficulté (3 faciles, 4 moyennes, 3 difficiles quand c'est possible), comme un Kahoot. */
+function tirageProgressif(pool, n) {
+  var parNiv = { 1: [], 2: [], 3: [] }, pris = [], cible = { 1: 3, 2: 4, 3: 3 };
+  shuffle(pool).forEach(function (x) { (parNiv[x.niv] || parNiv[2]).push(x); });
+  [1, 2, 3].forEach(function (v) { pris = pris.concat(parNiv[v].splice(0, cible[v])); });
+  var reste = shuffle(parNiv[1].concat(parNiv[2], parNiv[3]));
+  pris = pris.concat(reste.slice(0, Math.max(0, n - pris.length))).slice(0, n);
+  return pris.sort(function (a, b) { return a.niv - b.niv; });
+}
+/* Temps conseillé (secondes) : lecture de la question et des 4 réponses (~15 caractères/s) + réflexion selon le niveau, arrondi à 5 s, entre 10 et 45 s. */
+function tempsAuto(it) {
+  var lu = it.q.length + it.opts.reduce(function (t, o) { return t + String(o).length; }, 0);
+  return Math.min(45, Math.max(10, Math.round((5 + 4 * (it.niv || 2) + lu / 15) / 5) * 5));
+}
+function niveauSigle(s) { var N = window.SIGLES_NIV || {}; return (N[1] || []).indexOf(s) >= 0 ? 1 : (N[3] || []).indexOf(s) >= 0 ? 3 : 2; }
 function qcmBuild(src) {
-  var items = [];
+  var items;
   if (src === 'sigles') {
-    shuffle(GLOSSAIRE).slice(0, 10).forEach(function (g) {
-      var faux = shuffle(GLOSSAIRE.filter(function (h) { return h !== g; })).slice(0, 3).map(function (h) { return h[1]; });
-      items.push({ q: 'Que signifie « ' + g[0] + ' » ?', ok: g[1], opts: shuffle([g[1]].concat(faux)), ex: g[2] });
+    var G = GLOSSAIRE.filter(function (g) { return (window.SIGLES_EXCLUS || []).indexOf(g[0]) < 0; });
+    items = tirageProgressif(G.map(function (g) { return { g: g, niv: niveauSigle(g[0]) }; }), 10).map(function (x) {
+      var g = x.g, meme = shuffle(G.filter(function (h) { return h !== g && h[3] === g[3]; })), autres = shuffle(G.filter(function (h) { return h !== g && h[3] !== g[3]; }));
+      var faux = meme.concat(autres).slice(0, 3).map(function (h) { return h[1]; });   // pièges du même domaine (réseau, sécurité…) en priorité
+      return { q: 'Que signifie « ' + g[0] + ' » ?', ok: g[1], opts: shuffle([g[1]].concat(faux)), ex: g[2], niv: x.niv };
     });
   } else {
-    var pool = mesNotions().filter(function (n) { return MATIERES[n.mat][2] === src; });
-    shuffle(pool).slice(0, 10).forEach(function (n) {
-      var same = pool.filter(function (m) { return m !== n && m.mat === n.mat; }), autres = pool.filter(function (m) { return m !== n && m.mat !== n.mat; });
-      var faux = shuffle(same).concat(shuffle(autres)).slice(0, 3).map(function (m) { return m.a; });
-      items.push({ q: n.q, ok: n.a, opts: shuffle([n.a].concat(faux)), ex: EXP[n.id] ? EXP[n.id][0] : '', n: n });
+    var pool = mesNotions().filter(function (n) { return MATIERES[n.mat][2] === src && window.QCM && QCM[n.id]; });
+    items = tirageProgressif(pool.map(function (n) { return { n: n, niv: QCM[n.id][0] }; }), 10).map(function (x) {
+      var Q = QCM[x.n.id];
+      return { q: Q[1], ok: Q[2], opts: shuffle(Q.slice(2, 6)), ex: x.n.a, niv: Q[0], n: x.n };   // explication = la fiche complète de la notion
     });
   }
+  items.forEach(function (it) { it.auto = tempsAuto(it); });
   return { items: items };
 }
 
@@ -1351,24 +1368,26 @@ function khItems(k) {
   var c = ctrlById(k.slice(5)), pool = c ? ctrlCards(c) : [];
   return shuffle(pool).slice(0, 10).map(function (n) {
     var faux = shuffle(pool.filter(function (m) { return m !== n && m.a !== n.a; })).slice(0, 3).map(function (m) { return m.a; });
-    return { q: n.q, ok: n.a, opts: shuffle([n.a].concat(faux)), ex: n.ex[0], n: n };
+    var it = { q: n.q, ok: n.a, opts: shuffle([n.a].concat(faux)), ex: n.ex[0], n: n }; it.auto = tempsAuto(it); return it;
   });
 }
 /* Temps de la question en cours (secondes) : celui fixé dans « Mes quiz » pour cette question, sinon celui choisi pour la partie. g = kh ou mp.
    En solo, kh.lim = 0 veut dire « Sans chrono » : pas de compte à rebours, et pas de record (les points ne dépendent plus de la vitesse). */
-function qLim(g) { var it = g.items && g.items[g.i]; return (it && it.lim) || g.lim; }
+function qLim(g) { var it = g.items && g.items[g.i]; return (it && it.lim) || (g.lim === -1 ? (it && it.auto) || 20 : g.lim); }   // g.lim = -1 : temps automatique selon la question
+var KH_LIMS = [[-1, 'Automatique (selon la question)'], [10, '10 s'], [20, '20 s'], [30, '30 s']], NIV_NOM = { 1: 'Facile', 2: 'Moyen', 3: 'Difficile' };
+function nivTag(it) { return it && it.niv ? '<span class="tag kniv n' + it.niv + '">' + NIV_NOM[it.niv] + '</span>' : ''; }
 function khReste() { return kh.lim ? kh.t0 + qLim(kh) * 1000 - Date.now() : Infinity; }
 V.chrono = function (src, arg) {
   var L = khSources(), key = (src === 'ctrl' || src === 'quiz') && arg ? src + '/' + arg : src;
-  if (key && L.some(function (x) { return x[0] === key; }) && (!kh || kh.key !== key)) kh = { key: key, lim: kh ? kh.lim : 20, phase: 'ready' };
+  if (key && L.some(function (x) { return x[0] === key; }) && (!kh || kh.key !== key)) kh = { key: key, lim: kh ? kh.lim : -1, phase: 'ready' };
   if (kh && !L.some(function (x) { return x[0] === kh.key; })) kh = null;
   var best = kh && (S.kbest || {})[kh.key];
-  var head = pageHead('Quiz chrono', 'Des questions à choix multiples, comme un Kahoot : 10 questions (ou toutes celles de ton quiz), 4 réponses de couleur et un compte à rebours. Plus tu réponds vite, plus tu gagnes de points, et chaque bonne réponse d\'affilée ajoute un bonus de série. Tu préfères prendre ton temps ? Choisis « Sans chrono ». Touches 1 à 4 au clavier ; les erreurs vont dans ton carnet d\'erreurs.');
+  var head = pageHead('Quiz chrono', 'Des questions à choix multiples, comme un Kahoot : 10 questions (ou toutes celles de ton quiz), 4 réponses de couleur et un compte à rebours. Plus tu réponds vite, plus tu gagnes de points, et chaque bonne réponse d\'affilée ajoute un bonus de série. Les questions vont du plus facile au plus difficile, et en mode « Automatique » le temps s\'adapte à la longueur et au niveau de chaque question. Tu préfères prendre ton temps ? Choisis « Sans chrono ». Touches 1 à 4 au clavier ; les erreurs vont dans ton carnet d\'erreurs.');
   head += '<div class="row" style="margin-bottom:1rem"><a class="btn ghost small" href="#quiz">Mes quiz (écrire mes questions)</a><a class="btn ghost small" href="#animer">' + (mp && mp.host ? 'Revenir à ma partie à plusieurs' : 'Jouer à plusieurs (animer une partie)') + '</a><a class="btn ghost small" href="#rejoindre">' + (mp && !mp.host ? 'Revenir à la partie' : 'Rejoindre une partie') + '</a></div>';
   var chips = '<div class="chips">' + L.map(function (x) { return '<a class="chip' + (kh && kh.key === x[0] ? ' on' : '') + '" href="#chrono/' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '</div>';
   if (!kh) return head + chips + '<div class="card"><p class="muted">Choisis une épreuve, les sigles ou un de tes contrôles (il faut au moins 4 flashcards) pour lancer une partie.</p></div>';
   if (kh.phase === 'ready') return head + chips + '<div class="card kready"><p class="kbig">Prêt ?</p><p class="muted">' + esc(L.filter(function (x) { return x[0] === kh.key; })[0][1]) + (best ? ' · ton record : <b>' + best + ' points</b>' : '') + '</p>' +
-    '<div class="row" style="justify-content:center"><label class="small muted">Temps par question <select id="khLim">' + [10, 20, 30, 0].map(function (s) { return '<option value="' + s + '"' + (s === kh.lim ? ' selected' : '') + '>' + (s ? s + ' s' : 'Sans chrono') + '</option>'; }).join('') + '</select></label><button class="btn big" data-a="khstart">C\'est parti !</button></div></div>';
+    '<div class="row" style="justify-content:center"><label class="small muted">Temps par question <select id="khLim">' + KH_LIMS.concat([[0, 'Sans chrono']]).map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === kh.lim ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label><button class="btn big" data-a="khstart">C\'est parti !</button></div></div>';
   if (kh.phase === 'end') {
     var n = kh.items.length, record = kh.record;
     return head + chips + '<div class="card kready"><p class="small muted">Score final</p><p class="kbig">' + (kh.lim ? kh.score + ' points' : kh.ok + ' / ' + n) + '</p><p><b>' + kh.ok + ' / ' + n + '</b> bonnes réponses · meilleure série : ' + kh.maxStreak + (kh.lim ? '' : ' · sans chrono') + '</p>' +
@@ -1377,7 +1396,7 @@ V.chrono = function (src, arg) {
       '<div class="row" style="justify-content:center"><button class="btn big" data-a="khstart">Rejouer</button></div></div>';
   }
   var it = kh.items[kh.i], q = kh.phase === 'q', r = q ? khReste() : 0;
-  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (kh.i + 1) + ' / ' + kh.items.length + '</span><span class="kscore">' + kh.score + ' pts' + (kh.streak > 1 ? ' · série ' + kh.streak : '') + '</span></div>' +
+  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (kh.i + 1) + ' / ' + kh.items.length + ' ' + nivTag(it) + '</span><span class="kscore">' + kh.score + ' pts' + (kh.streak > 1 ? ' · série ' + kh.streak : '') + '</span></div>' +
     (kh.lim ? '<div class="kbar"><i' + (q ? ' style="animation-duration:' + qLim(kh) * 1000 + 'ms;animation-delay:' + (r - qLim(kh) * 1000) + 'ms"' : ' style="width:0"') + '></i></div>'
       : '<div class="bar" style="margin:.3rem 0 .9rem"><i style="width:' + (kh.i + (q ? 0 : 1)) / kh.items.length * 100 + '%"></i></div>') +
     '<div class="card kq' + (kh.lim ? '' : ' free') + '"><p class="qtext">' + esc(it.q) + '</p>' + (q && kh.lim ? '<span class="knum" id="khnum">' + Math.ceil(r / 1000) + '</span>' : '') + '</div>' +
@@ -1404,7 +1423,7 @@ function quizQ(x) {
 }
 function quizPlayable(x) { return !!(x.q.trim() && x.opts[x.ok].trim() && x.opts.filter(function (o) { return o.trim(); }).length >= 2); }
 function quizItems(z) {
-  return z.qs.filter(quizPlayable).map(function (x) { return { q: x.q, ok: x.opts[x.ok], opts: x.opts.filter(function (o) { return o.trim(); }), ex: x.ex, lim: x.lim }; });
+  return z.qs.filter(quizPlayable).map(function (x) { var it = { q: x.q, ok: x.opts[x.ok], opts: x.opts.filter(function (o) { return o.trim(); }), ex: x.ex, lim: x.lim }; it.auto = tempsAuto(it); return it; });
 }
 function quizPrompt(z, sujet, n) {
   var deja = z.qs.filter(quizPlayable).map(function (x) { return '- ' + x.q; });
@@ -1527,7 +1546,7 @@ function mpStop() {
 function mpPlayers() { return Object.keys(mp.players).map(function (id) { return mp.players[id]; }); }
 function mpRank() { return mpPlayers().filter(function (p) { return !p.gone; }).sort(function (a, b) { return b.score - a.score; }); }
 function mpSend(p, m) { mpPost(Object.assign({ to: p.id }, m)); }
-function mpQMsg(p) { var it = mp.items[mp.i]; return { t: 'q', i: mp.i, n: mp.items.length, q: it.q, opts: it.opts, lim: Math.max(1, Math.ceil((mp.t0 + qLim(mp) * 1000 - Date.now()) / 1000)), rep: !!(p && p.ans) }; }
+function mpQMsg(p) { var it = mp.items[mp.i]; return { t: 'q', i: mp.i, n: mp.items.length, q: it.q, opts: it.opts, niv: it.niv || 0, lim: Math.max(1, Math.ceil((mp.t0 + qLim(mp) * 1000 - Date.now()) / 1000)), rep: !!(p && p.ans) }; }
 function mpResMsg(p, R) { var it = mp.items[mp.i], i = R.indexOf(p); return { t: 'r', ok: !!(p.ans && p.ans.ok), rep: !!p.ans, gain: p.ans ? p.ans.gain : 0, score: p.score, rank: i + 1, nb: R.length, bonne: it.ok, streak: p.streak }; }
 function mpEndMsg(p, R) { return { t: 'end', rank: R.indexOf(p) + 1, nb: R.length, score: p.score, top: R.slice(0, 3).map(function (x) { return [x.name, x.score]; }) }; }
 
@@ -1598,7 +1617,7 @@ V.animer = function () {
   if (!mp || !mp.host) {
     var L = khSources();
     return head + '<div class="card"><div class="filters"><label>Questions<select id="mpSrc">' + L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + ((V.animer.pre ? V.animer.pre === x[0] : kh && kh.key === x[0]) ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></label>' +
-      '<label>Temps par question<select id="mpLim">' + [10, 20, 30].map(function (s) { return '<option value="' + s + '"' + (s === 20 ? ' selected' : '') + '>' + s + ' s</option>'; }).join('') + '</select></label><button class="btn" data-a="mphost">Créer la partie</button></div>' +
+      '<label>Temps par question<select id="mpLim">' + KH_LIMS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === -1 ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label><button class="btn" data-a="mphost">Créer la partie</button></div>' +
       '<p class="small muted" style="margin:0">' + (mpConfigOK() ? 'Il faut Internet sur l\'écran de l\'animateur et sur les téléphones (wifi ou 4G). Un joueur qui perd la connexion ou dont le téléphone se met en veille retrouve sa place en revenant sur la page.' : '<b class="bad-t">Le jeu à plusieurs n\'est pas encore configuré</b> : renseigne l\'adresse et la clé du projet Supabase dans <code>js/config.js</code>.') + '</p></div>' +
       '<p><a href="#chrono">← Jouer seul</a> · <a href="#rejoindre">Je suis joueur : rejoindre une partie</a></p>';
   }
@@ -1620,7 +1639,7 @@ V.animer = function () {
       (R.length > 3 ? mpTop(R, 60) : '') + '<div class="row" style="justify-content:center;margin-top:1rem">' + quit + '</div></div>';
   }
   var q = mp.phase === 'q', nrep = P.filter(function (p) { return p.ans; }).length, r = q ? mp.t0 + qLim(mp) * 1000 - Date.now() : 0;
-  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (mp.i + 1) + ' / ' + mp.items.length + '</span><span class="kscore">' + nrep + ' / ' + P.length + ' réponses</span></div>' +
+  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (mp.i + 1) + ' / ' + mp.items.length + ' ' + nivTag(it) + '</span><span class="kscore">' + nrep + ' / ' + P.length + ' réponses</span></div>' +
     '<div class="kbar"><i' + (q ? ' style="animation-duration:' + qLim(mp) * 1000 + 'ms;animation-delay:' + (r - qLim(mp) * 1000) + 'ms"' : ' style="width:0"') + '></i></div>' +
     '<div class="card kq"><p class="qtext">' + esc(it.q) + '</p>' + (q ? '<span class="knum" id="mpnum">' + Math.max(0, Math.ceil(r / 1000)) + '</span>' : '') + '</div>' +
     '<div class="kopts">' + it.opts.map(function (o, k) {
@@ -1670,7 +1689,7 @@ function mpPlayerMsg(me, m) {
   else if (m.t === 'err') { me.phase = 'fail'; me.err = String(m.msg || 'Refusé par l\'animateur.'); }
   else if (m.t === 'bye') { me.phase = 'fail'; me.err = 'L\'animateur a terminé la partie.'; }
   else if (m.t === 'q' && Array.isArray(m.opts)) { var i = Math.round(+m.i) || 0; if (me.phase === 'q' && me.q && me.q.i === i && me.rep != null) return;
-    me.phase = 'q'; me.q = { i: i, n: Math.round(+m.n) || 0, q: String(m.q), opts: m.opts.slice(0, 4).map(String), lim: Math.min(60, Math.max(1, +m.lim || 20)) }; me.t0 = Date.now(); me.rep = m.rep ? 1 : null; }
+    me.phase = 'q'; me.q = { i: i, n: Math.round(+m.n) || 0, niv: [1, 2, 3].indexOf(+m.niv) >= 0 ? +m.niv : 0, q: String(m.q), opts: m.opts.slice(0, 4).map(String), lim: Math.min(60, Math.max(1, +m.lim || 20)) }; me.t0 = Date.now(); me.rep = m.rep ? 1 : null; }
   else if (m.t === 'r' || m.t === 'end') {
     var num = function (v) { return Math.max(0, Math.round(+v) || 0); };
     me.phase = m.t; me.res = { ok: !!m.ok, rep: !!m.rep, gain: num(m.gain), score: num(m.score), rank: num(m.rank), nb: num(m.nb), streak: num(m.streak), bonne: String(m.bonne || ''),
@@ -1704,7 +1723,7 @@ V.rejoindre = function (code) {
   if (mp.phase === 'r') return head + '<div class="verdict ' + (R.ok ? 'good' : 'bad') + '"><div class="note20">' + (R.ok ? '+' + R.gain : R.rep ? 'Raté' : 'Trop tard') + '</div><b>' + (R.ok ? (R.streak > 1 ? 'Série de ' + R.streak + ' !' : 'Bonne réponse !') : 'La bonne réponse : ' + esc(R.bonne)) + '</b></div>' +
     '<div class="card kready"><p class="kbig">' + R.rank + (R.rank === 1 ? 'er' : 'e') + ' / ' + R.nb + '</p><p>' + R.score + ' points</p></div>' + quit;
   var Q = mp.q, rr = mp.t0 + Q.lim * 1000 - Date.now();
-  return '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (Q.i + 1) + ' / ' + Q.n + '</span><span class="knum sm" id="mpnum">' + Math.max(0, Math.ceil(rr / 1000)) + '</span></div>' +
+  return '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (Q.i + 1) + ' / ' + Q.n + ' ' + nivTag(Q) + '</span><span class="knum sm" id="mpnum">' + Math.max(0, Math.ceil(rr / 1000)) + '</span></div>' +
     '<div class="card kq"><p class="qtext">' + esc(Q.q) + '</p></div>' +
     (mp.rep != null ? '<div class="card kready"><p class="kbig">' + (mp.rep < 0 ? 'Temps écoulé' : 'Réponse envoyée') + '</p><p class="muted">Attends le résultat sur l\'écran de l\'animateur…</p></div>' :
       '<div class="kopts">' + Q.opts.map(function (o, k) { return '<button class="kopt ' + KH_COL[k] + '" data-a="mpa" data-v="' + k + '"><span class="ol">' + (k + 1) + '</span><span>' + esc(o) + '</span></button>'; }).join('') + '</div>') + '</div>';

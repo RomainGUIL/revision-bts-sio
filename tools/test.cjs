@@ -18,7 +18,7 @@ for (const [,src] of html.matchAll(/<script src="(.*?)"/g)) {
  let code=fs.readFileSync(path.join(root,src),'utf8');
  if(src==='js/app.js') {
    code=code.slice(0,code.lastIndexOf('fixSel(); applyTheme(); render();')) + `
-   window.T = { study, blank, readState, getState:()=>S, setState:(v)=>{S=v;buildCtrl();refreshThemeStats();}, save, buildCtrl, CTRLQ:()=>CTRLQ, CTRLC:()=>CTRLC, SUJETS, QUESTIONS, NOT, THEME_STATS, fsrsReview, deckStats, deckDue, autoScore, daysUntil, parseDossier, parseQuiz, repairJson, quizQ, ctrlImport, ACT, V, examRendre, setResult:(v)=>{examRes=v;}, getResult:()=>examRes, render, getSession:()=>session, resetTransient };
+   window.T = { study, blank, readState, getState:()=>S, setState:(v)=>{S=v;buildCtrl();refreshThemeStats();}, save, buildCtrl, CTRLQ:()=>CTRLQ, CTRLC:()=>CTRLC, SUJETS, QUESTIONS, NOT, THEME_STATS, fsrsReview, deckStats, deckDue, autoScore, daysUntil, parseDossier, parseQuiz, repairJson, quizQ, qcmBuild, tempsAuto, ctrlImport, ACT, V, examRendre, setResult:(v)=>{examRes=v;}, getResult:()=>examRes, render, getSession:()=>session, resetTransient };
    })();`;
  }
  vm.runInContext(code,ctx,{filename:src});
@@ -80,6 +80,27 @@ test('BTS-style subject runs as a timed mock exam with a weighted score',()=>{
  const bad=JSON.parse(JSON.stringify(T.getState())); bad.examRun=Object.assign({},run,{sid:'K_b1#9'}); assert.throws(()=>T.readState(bad));
  T.getState().examRun=Object.assign({},run); T.setState(Object.assign(T.blank(),{examRun:T.getState().examRun})); T.setResult(null); assert(!T.V.examen().includes('Examen blanc —')); assert.equal(T.getState().examRun,null);
  T.setState(T.blank()); T.resetTransient();
+});
+test('Every notion has a short, well-formed quiz question with a level',()=>{
+ const Q=ctx.QCM, ids=Array.from(T.NOT,n=>n.id);
+ assert.equal(ids.filter(id=>!Q[id]).join(', '),'','notions sans QCM'); assert.equal(Object.keys(Q).filter(id=>!ids.includes(id)).join(', '),'','QCM sans notion');
+ for (const [id,x] of Object.entries(Q)) {
+  assert(x.length===6 && [1,2,3].includes(x[0]),id+' : forme');
+  assert(x[1].length<=100,id+' : question trop longue ('+x[1].length+')');
+  x.slice(2).forEach(r=>assert(r.length>0 && r.length<=80,id+' : réponse trop longue « '+r+' »'));
+  assert.equal(new Set(x.slice(2)).size,4,id+' : réponses en double');
+ }
+ const G=ctx.GLOSSAIRE.map(g=>g[0]); [].concat(ctx.SIGLES_NIV[1],ctx.SIGLES_NIV[3],ctx.SIGLES_EXCLUS).forEach(s=>assert(G.includes(s),'sigle inconnu : '+s));
+});
+test('Quiz rounds rise in difficulty and get a time suited to each question',()=>{
+ for (const src of ['E7','E4','sigles']) {
+  const items=T.qcmBuild(src).items; assert.equal(items.length,10,src);
+  items.forEach((it,i)=>{ assert(i===0 || items[i-1].niv<=it.niv,src+' : ordre de difficulté'); assert(it.auto>=10 && it.auto<=45 && it.auto%5===0,src+' : temps '+it.auto); assert.equal(new Set(it.opts).size,it.opts.length); assert(it.opts.includes(it.ok)); });
+  if (src!=='sigles') items.forEach(it=>assert(it.opts.every(o=>o.length<=80),src+' : réponse longue'));
+  else items.forEach(it=>assert(!ctx.SIGLES_EXCLUS.some(s=>it.q.includes('« '+s+' »'))));
+ }
+ const court=T.tempsAuto({q:'IP ?',opts:['a','b','c','d'],niv:1}), long=T.tempsAuto({q:'x'.repeat(100),opts:['y'.repeat(80),'y'.repeat(80),'y'.repeat(80),'y'.repeat(80)],niv:3});
+ assert(court<long && court===10 && long<=45);
 });
 test('Custom quizzes are validated, imported from AI text and saved',()=>{
  const qs=T.parseQuiz('{"questions":[{"q":"Port DHCP serveur ?","reponses":["67","68","53","80"],"bonne":0},{"q":"Bail illimité ?","reponses":["Vrai","Faux"],"bonne":"Faux"},{"q":"","reponses":["a","b"]}]}');

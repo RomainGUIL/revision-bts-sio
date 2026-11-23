@@ -69,6 +69,7 @@ En ouvrant `index.html` directement, les PDF et audios sont simplement lus dans 
 | `js/study.js`, `css/study.css` | Brouillons, séances, relecture, écoute, recherche et préparation hors ligne |
 | `data/media.js`, `audio/*.wav` | Textes, questions et fichiers des quatre écoutes ; catalogue des médias |
 | `data/*.js` | Contenus pédagogiques chargés dans `window` |
+| `data/qcm.js` | Une question de quiz courte par notion (niveau 1 à 3, 3 pièges du même sujet) ; niveaux des sigles |
 | `data/questions.js` | Généré depuis les PDF ; ne pas modifier directement |
 | `tools/build_questions.py` | Régénération des questions ; nécessite `pypdf` |
 | `tools/test.cjs` | Tests techniques et parcours navigateur reproductibles |

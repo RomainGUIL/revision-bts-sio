@@ -312,6 +312,8 @@ details.dossier > summary { color: var(--text); }
 .kopt.good { outline: 4px solid var(--good); outline-offset: 2px; }
 .kopt[disabled] { cursor: default; }
 .kverdict { margin-top: 1rem; }
+.kniv { margin-left: .4rem; font-weight: 700; }
+.kniv.n1 { background: var(--good-bg); color: var(--good); } .kniv.n2 { background: var(--warn-bg); color: var(--warn); } .kniv.n3 { background: var(--bad-bg); color: var(--bad); }
 .knum.sm { position: static; transform: none; width: 40px; height: 40px; font-size: 1rem; }
 .mpcode { font-size: 3.4rem; font-weight: 800; letter-spacing: .08em; margin: 0 0 .5rem; color: var(--accent); font-variant-numeric: tabular-nums; }
 .mpnames { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
