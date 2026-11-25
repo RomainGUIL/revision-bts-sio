@@ -2,7 +2,7 @@
    Les fichiers de l'application sont mis en cache à l'installation ; les PDF des sujets sont mis en cache la première fois qu'on les ouvre.
    Après une mise à jour de l'application, changer VERSION pour forcer le rafraîchissement du cache. */
 var PREFIX = 'bts-sio:' + self.registration.scope + ':';
-var VERSION = PREFIX + 'v27';
+var VERSION = PREFIX + 'v28';
 var ASSETS = 'bts-sio-assets:' + self.registration.scope;
 var FILES = ['./', 'index.html', 'css/style.css', 'js/app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/favicon.ico', 'icons/icon-32.png', 'icons/apple-touch-icon.png',
   'data/questions.js', 'data/anciens.js', 'data/corrections.js', 'data/docs_questions.js', 'data/notions.js', 'data/explications.js', 'data/entrainement.js', 'data/entrainement_plus.js',

@@ -110,4 +110,8 @@ node tools/test-study.cjs --browser
 
 Les tests utilisent un profil temporaire et ne modifient pas le navigateur personnel. Aucun paquet n'est nécessaire pour utiliser l'application elle-même.
 
-Les PDF proviennent des sources citées dans les contenus, notamment le [Réseau Certa](https://www.reseaucerta.org/sujet-examen/). Conserver les attributions et respecter leurs conditions de réutilisation.
+Les PDF proviennent des sources citées dans les contenus, notamment le [Réseau Certa](https://www.reseaucerta.org/sujet-examen/) : « © Réseau CERTA - Ministère de l'Éducation Nationale - www.reseaucerta.org », licence CC BY-NC-SA 4.0. Conserver les attributions et respecter leurs conditions de réutilisation (pas d'usage commercial, contenus dérivés sous la même licence).
+
+### Mentions légales
+
+Page `#mentions` (menu « Organisation », fonction `V.mentions` dans `js/app.js`) : éditeur anonyme (particulier non professionnel, LCEN art. 1-1, II), hébergeur GitHub Pages, sources et licences, données personnelles (stockage local, Supabase pour le jeu à plusieurs, liens externes). À mettre à jour (`MENTIONS_MAJ`) si l'hébergement, Supabase ou les sources changent.

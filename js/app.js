@@ -387,6 +387,7 @@ var ICO = {
   pentest: 'M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5z M9 12l2 2 4-4',
   erreursfreq: 'M12 3 2 20h20z M12 10v4 M12 17h.01', python: 'M8 6 3 12l5 6 M16 6l5 6-5 6 M13.5 4l-3 16',
   glossaire: 'M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2 M8 7h6 M8 11h4',
+  mentions: 'M12 3v18 M5 7h14 M7 7l-3 7a3 3 0 0 0 6 0z M17 7l-3 7a3 3 0 0 0 6 0z M8 21h8',
   annales: 'M3 4h18v4H3z M5 8v12h14V8 M10 12h4', notes: 'M4 20V10 M10 20V4 M16 20v-7 M3 20h18', suivi: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M4 21a8 8 0 0 1 16 0'
 };
 function epTitre(ep) { return ep !== 'E6' ? EPREUVES[ep][0] : S.option === 'SLAM' ? 'Conception et développement d\'applications' : S.option === 'SISR' ? 'Administration des systèmes et des réseaux' : 'Épreuve pratique SISR / SLAM'; }
@@ -397,11 +398,11 @@ var NAV = [
   ['S\'entraîner', [['examen', 'Examen blanc'], ['oral', 'Simulateur d\'oral'], ['realisations', 'Mes réalisations (E5/E6)'], ['chrono', 'Quiz chrono (QCM)'], ['quiz', 'Mes quiz'], ['exos', 'Exercices'], ['ecoute', 'Écouter en anglais']]],
   ['Cours et fiches', [['biblio', 'Bibliothèque de notions'], ['pentest', 'Tests d\'intrusion (pentest)'], ['python', 'Maths et Python (E3)'], ['erreursfreq', 'Pièges fréquents'], ['glossaire', 'Glossaire des sigles'], ['fiches', 'Fiches à imprimer'], ['methode', 'Méthode de rédaction']]],
   ['Annales et ressources', [['annales', 'Sujets et corrections'], ['pronos', 'Thèmes à réviser'], ['tp', 'TP SISR'], ['relecture', 'Relire les corrections'], ['horsligne', 'Préparer le hors-ligne']]],
-  ['Organisation', [['planning', 'Mon planning'], ['notes', 'Mes notes'], ['suivi', 'Réglages et sauvegarde']]]
+  ['Organisation', [['planning', 'Mon planning'], ['notes', 'Mes notes'], ['suivi', 'Réglages et sauvegarde'], ['mentions', 'Mentions légales']]]
 ];
 /* Menu repliable (divulgation progressive) : seul le groupe de la page en cours est ouvert, les autres se déplient au clic. */
 var navOpen = {}, curRoute = 'accueil';
-var NAV_ALIAS = { duel: 'oral', express: 'seance', animer: 'chrono', rejoindre: 'chrono', apprises: 'biblio', matiere: 'matieres', notion: 'biblio', question: 'annales' };
+var NAV_ALIAS = { duel: 'oral', express: 'seance', animer: 'chrono', rejoindre: 'chrono', apprises: 'biblio', matiere: 'matieres', notion: 'biblio', question: 'annales', anciens: 'annales' };
 function groupOf(r) { r = NAV_ALIAS[r] || r; var g = NAV.filter(function (x) { return x[1].some(function (y) { return y[0] === r; }); })[0]; return g ? g[0] : ''; }
 function isNavOpen(g) { return !g || (navOpen[g] != null ? navOpen[g] : groupOf(curRoute) === g); }
 function renderNav() {
@@ -805,7 +806,7 @@ V.annales = function (sid, pageArg) {
       }).join('') + '</div><div class="pdf" id="pdf">' + pdfFrame(sid, page) + '</div></div>';
   }
   var avancement = function (s) { var qs = QUESTIONS.filter(function (q) { return q.sujet === s.id; }), d = qs.filter(function (q) { return S.qdone[q.id] != null; }).length; return '<td class="n">' + qs.length + '</td><td class="n">' + d + ' / ' + qs.length + '</td>'; };
-  var h = '<h1>Sujets et corrections</h1><p class="lead">Les sujets officiels de métropole depuis la réforme, téléchargés depuis le Réseau Certa (licence CC BY-NC-SA). Chaque sujet s\'ouvre en PDF, non corrigé ; les corrections de l\'application sont des propositions rédigées pour réviser, car les corrigés officiels sont réservés aux enseignants.</p>';
+  var h = '<h1>Sujets et corrections</h1><p class="lead">Les sujets officiels de métropole depuis la réforme, téléchargés depuis le Réseau Certa (« © Réseau CERTA - Ministère de l\'Éducation Nationale - www.reseaucerta.org », licence CC BY-NC-SA 4.0 ; voir les <a href="#mentions">mentions légales</a>). Chaque sujet s\'ouvre en PDF, non corrigé ; les corrections de l\'application sont des propositions rédigées pour réviser, car les corrigés officiels sont réservés aux enseignants.</p>';
   [['E7 Cybersécurité — option SISR', 'SISR'], ['E7 Cybersécurité — option SLAM', 'SLAM'], ['E4 CEJM (sujet propre au BTS SIO)', 'CEJM'], ['E4 CEJM — sujets des autres BTS tertiaires (même programme, pour s\'entraîner)', 'CEJM', 1]].forEach(function (g) {
     var ls = ANNALES.sujets.filter(function (s) { return s.option === g[1] && !s.autre === !g[2] && sujOK(s); });
     if (!ls.length) return;
@@ -859,6 +860,30 @@ V.anciens = function (sid) {
       }).join('') : '<p class="small muted">Aucune question de ce type dans ce sujet.</p>');
   });
   return h;
+};
+
+/* — Mentions légales et confidentialité (site publié sur GitHub Pages par un particulier, à titre non professionnel) —
+   L'éditeur reste anonyme (LCEN, art. 1-1, II) : seul l'hébergeur est indiqué. À mettre à jour si l'hébergement, Supabase ou les sources changent. */
+var MENTIONS_MAJ = '25 novembre 2026';
+V.mentions = function () {
+  var lien = function (u, t) { return '<a target="_blank" rel="noopener" href="' + u + '">' + (t || u.replace(/^https:\/\//, '')) + '</a>'; };
+  return pageHead('Mentions légales et confidentialité', 'Qui publie ce site, qui l\'héberge, d\'où viennent les contenus et ce que deviennent tes données. Dernière mise à jour : ' + MENTIONS_MAJ + '.') +
+    '<div class="card docbody">' +
+    '<h2>Éditeur</h2><p>Ce site est un outil de révision gratuit, publié à titre personnel et non professionnel par un étudiant de BTS SIO. Conformément à l\'article 1-1, II de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l\'économie numérique (LCEN), l\'éditeur a choisi de ne pas publier son identité ; ses éléments d\'identification ont été communiqués à l\'hébergeur.</p>' +
+    '<p>Contact : par le dépôt du projet, ' + lien('https://github.com/RomainGUIL/revision-bts-sio') + '.</p>' +
+    '<h2>Hébergeur</h2><p>GitHub, Inc. (service GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — ' + lien('https://github.com') + '.</p>' +
+    '<h2>Nature du site</h2><p>Site gratuit, sans publicité ni but commercial. Il n\'est affilié ni au ministère de l\'Éducation nationale, ni au Réseau Certa. Les corrections, fiches, pronostics et notes proposés sont des aides à la révision rédigées pour l\'application : ce ne sont pas des corrigés officiels et ils peuvent contenir des erreurs. Les modalités d\'examen font foi dans les textes officiels et sur ta convocation.</p>' +
+    '<h2>Sources et licences</h2><p>Les sujets d\'examen (PDF), leurs énoncés et les anciens sujets proviennent du Réseau Certa : « © Réseau CERTA - Ministère de l\'Éducation Nationale - ' + lien('https://www.reseaucerta.org', 'www.reseaucerta.org') + ' », sous licence ' + lien('https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr', 'Creative Commons Attribution - Pas d\'utilisation commerciale - Partage dans les mêmes conditions 4.0 International (CC BY-NC-SA 4.0)') + '. ' +
+      'Les contenus repris ou adaptés de ces sujets (énoncés extraits, documents par question, corrections qui s\'y rapportent) sont diffusés sous la même licence CC BY-NC-SA 4.0.</p>' +
+      '<p>Le jeu à plusieurs utilise la bibliothèque Supabase (licence MIT), chargée depuis ' + lien('https://www.jsdelivr.com', 'jsDelivr') + '.</p>' +
+    '<h2>Tes données</h2><ul>' +
+      '<li><b>Pas de compte, pas de mesure d\'audience, pas de publicité, pas de cookie publicitaire.</b> L\'éditeur ne reçoit aucune de tes données.</li>' +
+      '<li><b>Ta progression reste dans ton navigateur.</b> Notions apprises, réponses, notes, quiz, contrôles et réglages sont enregistrés uniquement sur ton appareil (stockage local du navigateur et cache hors ligne). Ce stockage sert seulement au fonctionnement du site que tu utilises : il ne demande pas de consentement. Pour tout effacer : « Réglages et sauvegarde » → « Tout remettre à zéro », ou supprime les données du site dans les réglages de ton navigateur.</li>' +
+      '<li><b>Quiz à plusieurs.</b> Pendant une partie, ton pseudo, tes réponses et tes points transitent en direct par le service ' + lien('https://supabase.com', 'Supabase') + ' (Supabase, Inc., États-Unis) entre ton appareil et celui de l\'animateur. Ils ne sont enregistrés ni par l\'éditeur ni dans une base de données ; comme tout service en ligne, Supabase voit l\'adresse IP de ton appareil. Utilise un pseudo, jamais ton nom complet.</li>' +
+      '<li><b>Hébergement.</b> GitHub, qui héberge le site, peut enregistrer l\'adresse IP des visiteurs pour la sécurité de son service : voir sa ' + lien('https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement', 'déclaration de confidentialité') + '.</li>' +
+      '<li><b>Liens externes.</b> YouTube, ChatGPT, Claude, Basthon ou le Réseau Certa ne s\'ouvrent que si tu cliques. Quand tu envoies une demande à une IA, le texte de la demande est transmis à ce service : n\'y mets pas d\'informations personnelles.</li>' +
+      '<li><b>Tes droits.</b> L\'éditeur ne détenant aucune donnée te concernant, tes droits (accès, effacement…) s\'exercent directement auprès des services cités. Tu peux aussi saisir la ' + lien('https://www.cnil.fr/fr/plaintes', 'CNIL') + '.</li>' +
+    '</ul></div>';
 };
 
 /* — Mes notes : moyenne par matière, par épreuve et moyenne générale pondérée par les coefficients —
