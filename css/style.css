@@ -108,6 +108,22 @@ main:has(.split.stack), main:has(.split.cote) { max-width: none; }
 .tag.i3 { background: var(--bad-bg); color: var(--bad); }
 .tag.i2 { background: var(--warn-bg); color: var(--warn); }
 .tag.good { background: var(--good-bg); color: var(--good); }
+.tag.bad { background: var(--bad-bg); color: var(--bad); }
+/* Thèmes à réviser : grille des années et conclusions */
+td.yr { text-align: center; color: var(--muted); width: 3.2rem; }
+td.yr.on { background: var(--soft); color: var(--accent); font-weight: 700; }
+td.n.muted { opacity: .55; }
+.yrc { font-size: .65rem; font-weight: 700; color: var(--muted); margin-left: .1rem; }
+.pronol { margin: .4rem 0 .8rem; padding-left: 1.3rem; }
+.pronol li { margin-bottom: .45rem; }
+/* Corrigé de fin de partie du quiz à plusieurs */
+.mpcorr { margin-top: 1rem; text-align: left; }
+.mpcorr > summary { cursor: pointer; }
+.mpc { border-top: 1px solid var(--line); padding: .7rem 0 .2rem; }
+.mpc p { margin: .15rem 0; }
+.mpc.ko { border-left: 3px solid var(--bad); padding-left: .7rem; }
+.mpc.ok { border-left: 3px solid var(--good); padding-left: .7rem; }
+.mpc .mpex { color: var(--muted); }
 .tag.acc { background: var(--soft); color: var(--accent); }
 
 .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .7rem; }

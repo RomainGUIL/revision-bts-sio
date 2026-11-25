@@ -673,11 +673,93 @@ V.apprises = function () {
     (list.length ? notionsParMatiere(list, true) : '<div class="card"><p class="muted">Aucune notion marquée comme apprise pour l\'instant. Dans la bibliothèque ou les flashcards, clique sur « J\'ai appris ».</p></div>');
 };
 
-/* — Thèmes à réviser — */
+/* — Thèmes à réviser —
+   Pour E7 (par option) et E4 : analyse des annales, un sujet de métropole par session.
+   - Probabilité « métropole » = (sessions où le thème est tombé + 1) / (sessions + 2) : règle de Laplace, prudente avec peu de sujets
+     (5 sujets : 5/5 ≈ 86 %, 4/5 ≈ 71 %, 3/5 ≈ 57 %, 2/5 ≈ 43 %, 1/5 ≈ 29 %).
+   - Probabilité « combinée » : même formule, mais les sujets de Nouvelle-Calédonie et de secours comptent pour un demi-sujet (POIDS_AUTRES).
+     Raison (comparaison de novembre 2026, 18 sujets E7) : un sujet calédonien ressemble à un sujet de métropole autant que deux sujets
+     de métropole entre eux, mais il prédit moins bien la métropole suivante (59 % des thèmes retrouvés contre 73 %).
+   - Taux de retour : sur la métropole seule, part des thèmes tombés une session qui retombent la suivante, et part des thèmes absents qui tombent. */
+var POIDS_AUTRES = 0.5;
+function zoneSujet(s) { return /-Nouvelle-Caledonie$/.test(s.id) ? 'nc' : /-secours$/.test(s.id) ? 'secours' : 'metro'; }
+function analysePronos(groupe, combine) {
+  var duGroupe = ANNALES.sujets.filter(function (s) { return s.option === groupe && !s.autre && !s.ent && !s.ctrl && !s.bts; });
+  var sujets = duGroupe.filter(function (s) { return zoneSujet(s) === 'metro'; }).sort(function (a, b) { return a.annee - b.annee; });
+  var autres = duGroupe.filter(function (s) { return zoneSujet(s) !== 'metro'; });
+  var annees = sujets.map(function (s) { return s.annee; }), n = sujets.length, der = annees[n - 1];
+  var mats = groupe === 'CEJM' ? ['eco', 'droit', 'mgmt'] : ['cyber', groupe.toLowerCase()];
+  var nbq = {}, aut = {};   // nbq[theme][annee] = questions en métropole ; aut[theme][idSujet] = questions dans un sujet calédonien ou de secours
+  QUESTIONS.forEach(function (q) {
+    var s = SUJETS[q.sujet]; if (!s || duGroupe.indexOf(s) < 0) return;
+    q.themes.forEach(function (t) {
+      if (zoneSujet(s) === 'metro') (nbq[t] = nbq[t] || {})[s.annee] = (nbq[t][s.annee] || 0) + 1;
+      else (aut[t] = aut[t] || {})[s.id] = (aut[t][s.id] || 0) + 1;
+    });
+  });
+  var themes = Object.keys(THEMES).filter(function (t) { return mats.indexOf(THEMES[t][1]) >= 0 && (nbq[t] || aut[t]); }).map(function (t) {
+    var m = nbq[t] || {}, a = aut[t] || {};
+    var k = annees.filter(function (y) { return m[y]; }).length, ka = autres.filter(function (s) { return a[s.id]; }).length;
+    var pm = (k + 1) / (n + 2), pc = (k + POIDS_AUTRES * ka + 1) / (n + POIDS_AUTRES * autres.length + 2);
+    return { id: t, k: k, ka: ka, pm: pm, pc: pc, p: combine ? pc : pm, dernier: !!m[der], nq: m, aut: a,
+      total: annees.reduce(function (x, y) { return x + (m[y] || 0); }, 0) };
+  }).sort(function (a, b) { return b.p - a.p || b.total - a.total; });
+  var rest = 0, restN = 0, app = 0, appN = 0;
+  for (var i = 0; i + 1 < n; i++) themes.forEach(function (t) {
+    var x = !!t.nq[annees[i]], y = !!t.nq[annees[i + 1]];
+    if (x) { restN++; rest += y; } else { appN++; app += y; }
+  });
+  return { sujets: sujets, autres: autres, annees: annees, n: n, der: der, themes: themes, combine: combine,
+    pRetour: restN ? rest / restN : 0, pApparition: appN ? app / appN : 0, nbDernier: themes.filter(function (t) { return t.dernier; }).length };
+}
+function niveauProba(p) { return p >= 0.8 ? ['Priorité absolue', 'i3'] : p >= 0.65 ? ['Très probable', 'i2'] : p >= 0.5 ? ['Pile ou face', ''] : p >= 0.35 ? ['Possible', ''] : ['Rare', '']; }
+function vuePronosAnnales() {
+  var opt = V.pronos.opt = S.option || V.pronos.opt || 'SISR';
+  var groupe = S.ep === 'E4' ? 'CEJM' : opt, A = analysePronos(groupe, !!V.pronos.combine), prochaine = A.der + 1;
+  var pct = function (x) { return Math.round(x * 100) + ' %'; };
+  var noms = function (l) { return l.map(function (t) { return '<b>' + esc(THEMES[t.id][0]) + '</b>'; }).join(', '); };
+  var par = function (nv) { return A.themes.filter(function (t) { return niveauProba(t.p)[0] === nv; }); };
+  var prio = par('Priorité absolue'), tres = par('Très probable'), pile = par('Pile ou face'), poss = par('Possible');
+  var surveil = A.themes.filter(function (t) { return t.p >= 0.65 && !t.dernier; });
+  var nbAutres = A.autres.length, titre = groupe === 'CEJM' ? 'E4 CEJM' : 'E7 Cybersécurité — option ' + groupe;
+  var h = (S.ep === 'E7' && !S.option ? '<div class="chips sub">' + ['SISR', 'SLAM'].map(function (o) { return '<button class="chip' + (opt === o ? ' on' : '') + '" data-a="setpopt" data-v="' + o + '">Option ' + o + '</button>'; }).join('') + '</div>' : '') +
+    '<div class="chips sub"><button class="chip' + (A.combine ? '' : ' on') + '" data-a="setpcomb" data-v="0">Métropole seule</button><button class="chip' + (A.combine ? ' on' : '') + '" data-a="setpcomb" data-v="1"' + (nbAutres ? '' : ' disabled') + '>Métropole + Nouvelle-Calédonie et secours</button></div>' +
+    '<p class="small muted">' + A.n + ' sujets de métropole (' + A.annees[0] + ' à ' + A.der + ')' + (nbAutres ? ' · ' + nbAutres + ' sujet' + (nbAutres > 1 ? 's' : '') + ' de Nouvelle-Calédonie ou de secours' + (A.combine ? ', comptés chacun pour un demi-sujet' : ', non comptés dans ce calcul') : ' · aucun sujet de Nouvelle-Calédonie ou de secours dans l\'application pour cette épreuve') + '.</p>';
+  h += '<div class="card hint"><h2 style="margin-top:0">' + esc(titre) + ' : ce qu\'il faut en retenir pour ' + prochaine + '</h2><ol class="pronol">' +
+    (A.pRetour - A.pApparition < 0.15
+      ? '<li><b>Le sujet de ' + A.der + ' ne dit presque rien sur celui de ' + prochaine + '.</b> D\'une session à l\'autre, en métropole, un thème tombé revient dans ' + pct(A.pRetour) + ' des cas, et un thème absent tombe quand même dans ' + pct(A.pApparition) + ' des cas. Ce qui compte, c\'est la fréquence sur plusieurs années. '
+      : '<li><b>Le sujet de ' + A.der + ' est un bon indice pour ' + prochaine + ', sans être une garantie.</b> En métropole, un thème tombé revient la session suivante dans ' + pct(A.pRetour) + ' des cas, contre ' + pct(A.pApparition) + ' pour un thème absent. ') +
+    'Sur les ' + A.nbDernier + ' thèmes de ' + A.der + ', attends-toi à en revoir environ ' + Math.round(A.nbDernier * A.pRetour) + ', sans savoir lesquels — sauf ceux qui tombent tous les ans.</li>' +
+    (prio.length ? '<li><b>Priorité absolue :</b> ' + noms(prio) + '.</li>' : '') +
+    (tres.length ? '<li><b>Très probable :</b> ' + noms(tres) + '.</li>' : '') +
+    (surveil.length ? '<li><b>À surveiller :</b> ' + noms(surveil) + ' — probable, mais absent' + (surveil.length > 1 ? 's' : '') + ' du sujet de métropole ' + A.der + '.</li>' : '') +
+    (pile.length ? '<li><b>Pile ou face :</b> ' + noms(pile) + '. En général, une partie de ce groupe tombe.</li>' : '') +
+    (poss.length ? '<li><b>À ne pas négliger :</b> ' + poss.length + ' thème' + (poss.length > 1 ? 's' : '') + ' « possible' + (poss.length > 1 ? 's' : '') + ' » ; statistiquement, quelques-uns tomberont.</li>' : '') +
+    '</ol><p class="small muted" style="margin:0">Probabilités estimées et prudentes : (sessions où le thème est tombé + 1) ÷ (sessions + 2)' + (A.combine ? ', les sujets de Nouvelle-Calédonie et de secours comptant pour moitié car ils prédisent moins bien la métropole' : '') + '. ' +
+    A.n + ' sujets de métropole seulement : un thème nouveau reste possible, et même pour un thème quasi certain, les questions, l\'entreprise et les documents changent chaque année.</p></div>';
+  h += '<div class="card"><table><tr><th>Thème</th><th>Chance en ' + prochaine + '</th><th class="n">Métropole seule</th><th class="n">Avec Calédonie</th>' + A.annees.map(function (y) { return '<th class="n">' + y + '</th>'; }).join('') + '<th></th></tr>' +
+    A.themes.map(function (t) {
+      var nv = niveauProba(t.p);
+      var ex = QUESTIONS.filter(function (q) { return q.themes.indexOf(t.id) >= 0 && A.sujets.concat(A.autres).indexOf(SUJETS[q.sujet]) >= 0; }).sort(function (a, b) { return SUJETS[b.sujet].annee - SUJETS[a.sujet].annee; }).slice(0, 3);
+      return '<tr><td><details><summary><b>' + esc(THEMES[t.id][0]) + '</b></summary><p class="small"><b>Question type :</b> ' + esc(THEMES[t.id][2]) + '</p>' +
+        (ex.length ? '<p class="small muted">Exemples tombés :</p><ul class="small">' + ex.map(function (q) { return '<li>' + esc(sujetLabel(SUJETS[q.sujet])) + ', ' + esc(q.num) + ' : ' + esc(q.texte.slice(0, 200)) + (q.texte.length > 200 ? '…' : '') + '</li>'; }).join('') + '</ul>' : '') + '</details></td>' +
+        '<td class="n"><span class="tag ' + nv[1] + '">' + nv[0] + '</span><div class="bar" style="margin-top:.3rem"><i style="width:' + Math.round(t.p * 100) + '%"></i></div></td>' +
+        '<td class="n' + (A.combine ? ' muted' : '') + '">≈ ' + pct(t.pm) + '<br><span class="small muted">' + t.k + '/' + A.n + '</span></td>' +
+        '<td class="n' + (A.combine ? '' : ' muted') + '">' + (nbAutres ? '≈ ' + pct(t.pc) + '<br><span class="small muted">+ ' + t.ka + '/' + nbAutres + ' autres</span>' : '—') + '</td>' +
+        A.annees.map(function (y) {
+          var q = t.nq[y], c = A.autres.filter(function (s) { return s.annee === y && t.aut[s.id]; });
+          return '<td class="n yr' + (q ? ' on' : '') + '" title="' + (q ? q + ' question(s) en métropole ' + y : 'absent en métropole ' + y) + (c.length ? ' · aussi dans : ' + c.map(function (s) { return s.cas; }).join(', ') : '') + '">' + (q || '·') + (c.length ? '<sup class="yrc">C</sup>' : '') + '</td>';
+        }).join('') +
+        '<td><div class="row"><a class="btn small" href="#cas/theme/' + t.id + '">S\'entraîner</a><button class="btn ghost small" data-a="gotheme" data-v="' + t.id + '">Notions</button></div></td></tr>';
+    }).join('') + '</table><p class="small muted" style="margin-top:.7rem">Chiffre dans une case = nombre de questions sur ce thème dans le sujet de métropole de cette année ; « · » = absent ; « C » = tombé aussi cette année-là en Nouvelle-Calédonie ou en sujet de secours (survole la case pour le détail). Clique sur un thème pour la question type et des exemples.</p></div>';
+  return h;
+}
 V.pronos = function () {
   if (!S.ep) S.ep = 'E7';
   fixSel();
   var annales = S.ep === 'E7' || S.ep === 'E4';
+  if (annales) return '<h1>Thèmes à réviser</h1><p class="lead">Ce qui a le plus de chances de tomber à la prochaine session, d\'après les annales. Par défaut, le calcul se base sur les sujets de métropole, les plus fiables pour prévoir la métropole ; tu peux y ajouter les sujets de Nouvelle-Calédonie et de secours, qui comptent alors pour moitié.</p>' +
+    picker({}) + vuePronosAnnales();
   var ids = Object.keys(THEMES).filter(function (id) { var m = THEMES[id][1]; return MATIERES[m][2] === S.ep && matOK(m); })
     .sort(function (a, b) { return THEME_STATS[b].ratio - THEME_STATS[a].ratio || THEME_STATS[b].nq - THEME_STATS[a].nq; });
   return '<h1>Thèmes à réviser</h1><p class="lead">Pour E7 et E4, les fréquences décrivent les sujets inclus dans l’application (métropole, Nouvelle-Calédonie et secours), filtrés selon ton option. Elles ne prédisent pas le prochain examen. Pour les autres épreuves, utilise les thèmes comme une liste de travail.</p>' +
@@ -1569,7 +1651,13 @@ V.quiz = function (id) {
    Messages joueur → animateur : { t:'join', name } { t:'a', i, k }
    Messages animateur → joueur : { t:'ok' } { t:'err', msg } { t:'q', i, n, q, opts, lim, rep } { t:'r', … } { t:'end', … } { t:'bye' }
    Un joueur garde son id (sessionStorage) : après une mise en veille ou un rechargement, il retrouve sa place et ses points.
-   Seuls des pseudos circulent (pas de nom réel). mp = état de la partie (animateur : host = true ; joueur : host = false). */
+   Seuls des pseudos circulent (pas de nom réel). mp = état de la partie (animateur : host = true ; joueur : host = false).
+   Options choisies par l'animateur à la création :
+   - mp.joue : l'animateur joue aussi. Il devient un joueur local d'id 'jhost' (jamais accepté depuis le réseau), répond sur son écran
+     (clic ou touches 1 à 4) et apparaît dans le classement. Sinon il anime seulement.
+   - mp.expl : 'tous' = l'explication s'affiche aussi sur les téléphones après chaque question ;
+     'anim' = pendant la partie, seul l'écran de l'animateur la montre (il explique lui-même) ; les téléphones ne voient que la bonne réponse.
+   Dans les deux cas, chaque joueur reçoit à la fin le corrigé complet : question, sa réponse, bonne réponse, explication (p.hist = réponses données). */
 /* SUPA_SRI : empreinte d'intégrité de ce fichier précis ; si le fichier servi par le CDN était modifié, le navigateur refuserait de l'exécuter.
    En cas de changement de version, recalculer l'empreinte (sha384, base64). */
 var SUPA_SRI = 'sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o';
@@ -1606,16 +1694,44 @@ function mpStop() {
 }
 function mpPlayers() { return Object.keys(mp.players).map(function (id) { return mp.players[id]; }); }
 function mpRank() { return mpPlayers().filter(function (p) { return !p.gone; }).sort(function (a, b) { return b.score - a.score; }); }
-function mpSend(p, m) { mpPost(Object.assign({ to: p.id }, m)); }
+function mpSend(p, m) { if (!p.local) mpPost(Object.assign({ to: p.id }, m)); }   // le joueur « animateur » est local : rien à envoyer
 function mpQMsg(p) { var it = mp.items[mp.i]; return { t: 'q', i: mp.i, n: mp.items.length, q: it.q, opts: it.opts, niv: it.niv || 0, lim: Math.max(1, Math.ceil((mp.t0 + qLim(mp) * 1000 - Date.now()) / 1000)), rep: !!(p && p.ans) }; }
-function mpResMsg(p, R) { var it = mp.items[mp.i], i = R.indexOf(p); return { t: 'r', ok: !!(p.ans && p.ans.ok), rep: !!p.ans, gain: p.ans ? p.ans.gain : 0, score: p.score, rank: i + 1, nb: R.length, bonne: it.ok, streak: p.streak }; }
-function mpEndMsg(p, R) { return { t: 'end', rank: R.indexOf(p) + 1, nb: R.length, score: p.score, top: R.slice(0, 3).map(function (x) { return [x.name, x.score]; }) }; }
+function mpResMsg(p, R) {
+  var it = mp.items[mp.i], i = R.indexOf(p);
+  return { t: 'r', ok: !!(p.ans && p.ans.ok), rep: !!p.ans, gain: p.ans ? p.ans.gain : 0, score: p.score, rank: i + 1, nb: R.length, bonne: it.ok, streak: p.streak,
+    mine: p.ans ? it.opts[p.ans.k] : '', ex: mp.expl === 'tous' ? String(it.ex || '').slice(0, 700) : '', anim: mp.expl === 'anim' };
+}
+/* Corrigé de fin de partie : [question, réponse du joueur ('' = pas de réponse), bonne réponse, explication]. Textes raccourcis pour les longs quiz. */
+function mpCorrige(p) {
+  var court = mp.items.length > 20;
+  return mp.items.map(function (it, i) {
+    var k = p && p.hist ? p.hist[i] : undefined;
+    return [String(it.q).slice(0, 300), k >= 0 ? String(it.opts[k]).slice(0, 150) : '', String(it.ok).slice(0, 150), String(it.ex || '').slice(0, court ? 250 : 700)];
+  });
+}
+function mpEndMsg(p, R) { return { t: 'end', rank: R.indexOf(p) + 1, nb: R.length, score: p.score, top: R.slice(0, 3).map(function (x) { return [x.name, x.score]; }), corr: mpCorrige(p) }; }
+/* Affichage du corrigé (animateur et joueurs). C = liste renvoyée par mpCorrige ; avecRep = afficher la réponse donnée. */
+function mpCorrigeHtml(C, avecRep, ouvert) {
+  if (!C || !C.length) return '';
+  var nbFaux = C.filter(function (c) { return avecRep && c[1] !== c[2]; }).length;
+  return '<details class="card mpcorr"' + (ouvert ? ' open' : '') + '><summary><b>Revoir les réponses et les explications</b>' + (avecRep ? ' <span class="small muted">· ' + nbFaux + ' erreur' + (nbFaux > 1 ? 's' : '') + '</span>' : '') + '</summary>' +
+    C.map(function (c, i) {
+      var ok = c[1] === c[2];
+      return '<div class="mpc' + (avecRep ? (ok ? ' ok' : ' ko') : '') + '"><p class="small muted">Question ' + (i + 1) + '</p><p><b>' + esc(c[0]) + '</b></p>' +
+        (avecRep ? '<p class="small">Ta réponse : ' + (c[1] ? esc(c[1]) : '<i>pas de réponse</i>') + ' ' + (ok ? '<span class="tag good">✓</span>' : '<span class="tag bad">✗</span>') + '</p>' : '') +
+        (!avecRep || !ok ? '<p class="small">Bonne réponse : <b>' + esc(c[2]) + '</b></p>' : '') +
+        (c[3] ? '<p class="small mpex">' + esc(c[3]) + '</p>' : '') + '</div>';
+    }).join('') + '</details>';
+}
 
 /* Animateur */
-function mpHost(key, lim) {
+function mpHost(key, lim, o) {
   mpStop();
   if (!mpConfigOK()) { mp = { host: true, phase: 'fail', err: 'Le jeu à plusieurs n\'est pas encore configuré : il faut renseigner l\'adresse et la clé du projet Supabase dans js/config.js.' }; return; }
-  var me = mp = { host: true, id: 'host', key: key, lim: lim, phase: 'conn', players: {}, code: String(100000 + Math.floor(Math.random() * 900000)) };
+  o = o || {};
+  var me = mp = { host: true, id: 'host', key: key, lim: lim, phase: 'conn', players: {}, code: String(100000 + Math.floor(Math.random() * 900000)),
+    joue: !!o.joue, expl: o.expl === 'anim' ? 'anim' : 'tous' };
+  if (me.joue) me.moi = me.players.jhost = { id: 'jhost', local: true, name: o.pseudo || 'Animateur', score: 0, streak: 0, ans: null, hist: [] };
   supaLib(function (err) {
     if (mp !== me) return;
     if (err) { me.phase = 'fail'; me.err = err.message; mpDraw(); return; }
@@ -1626,7 +1742,7 @@ function mpHost(key, lim) {
 }
 function mpHostMsg(me, m) {
   var id = String(m.from || '').slice(0, 40), p = me.players[id];
-  if (!/^j[\w-]+$/.test(id)) return;
+  if (!/^j[\w-]+$/.test(id) || id === 'jhost') return;   // 'jhost' = l'animateur qui joue : jamais accepté depuis le réseau
   if (m.t === 'join') {
     if (p) {   // retour d'un joueur (mise en veille, réseau perdu, page rechargée) : il retrouve sa place et l'écran en cours
       p.gone = false; mpSend(p, { t: 'ok', name: p.name });
@@ -1638,7 +1754,7 @@ function mpHostMsg(me, m) {
     var refus = !name ? 'Choisis un pseudo.' : me.phase === 'end' ? 'La partie est terminée.' : list.length >= MP_MAX ? 'La partie est complète.'
       : list.some(function (x) { return x.name.toLowerCase() === name.toLowerCase(); }) ? 'Ce pseudo est déjà pris, choisis-en un autre.' : '';
     if (refus) { mpPost({ to: id, t: 'err', msg: refus }); return; }
-    p = me.players[id] = { id: id, name: name, score: 0, streak: 0, ans: null };   // une arrivée en cours de partie commence à 0 point
+    p = me.players[id] = { id: id, name: name, score: 0, streak: 0, ans: null, hist: [] };   // une arrivée en cours de partie commence à 0 point
     mpSend(p, { t: 'ok', name: name });
     if (me.phase === 'q') mpSend(p, mpQMsg(p));
     mpDraw();
@@ -1661,7 +1777,7 @@ function mpAnswer(id, m) {
 function mpCheckAll() { if (mp && mp.host && mp.phase === 'q') { var L = mpPlayers().filter(function (p) { return !p.gone; }); if (L.length && L.every(function (p) { return p.ans; })) mpReveal(); } }
 function mpReveal() {
   mp.phase = 'r';
-  mpPlayers().forEach(function (p) { var a = p.ans; p.score += a ? a.gain : 0; p.streak = a && a.ok ? p.streak + 1 : 0; });
+  mpPlayers().forEach(function (p) { var a = p.ans; p.score += a ? a.gain : 0; p.streak = a && a.ok ? p.streak + 1 : 0; (p.hist = p.hist || [])[mp.i] = a ? a.k : -1; });
   var R = mpRank();
   R.forEach(function (p) { mpSend(p, mpResMsg(p, R)); });
   mpDraw();
@@ -1677,8 +1793,15 @@ V.animer = function () {
   var head = pageHead('Quiz chrono à plusieurs', 'Tu es l\'animateur : projette cet écran. Chacun rejoint la partie sur son téléphone avec le code, répond avec les couleurs, et le classement s\'affiche après chaque question.');
   if (!mp || !mp.host) {
     var L = khSources();
+    var o = V.animer.o = V.animer.o || { joue: false, pseudo: '', expl: 'tous' };
     return head + '<div class="card"><div class="filters"><label>Questions<select id="mpSrc">' + L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + ((V.animer.pre ? V.animer.pre === x[0] : kh && kh.key === x[0]) ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></label>' +
-      '<label>Temps par question<select id="mpLim">' + KH_LIMS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === -1 ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label><button class="btn" data-a="mphost">Créer la partie</button></div>' +
+      '<label>Temps par question<select id="mpLim">' + KH_LIMS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === -1 ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label></div>' +
+      '<div class="filters"><label>Ton rôle<select id="mpRole"><option value="anime"' + (o.joue ? '' : ' selected') + '>J\'anime seulement</option><option value="joue"' + (o.joue ? ' selected' : '') + '>J\'anime et je joue aussi</option></select></label>' +
+      '<label id="mpPseudoL"' + (o.joue ? '' : ' hidden') + '>Ton pseudo dans le classement<input id="mpPseudo" maxlength="20" placeholder="ex. Le prof" value="' + esc(o.pseudo) + '"></label>' +
+      '<label>Explications<select id="mpExpl"><option value="tous"' + (o.expl === 'tous' ? ' selected' : '') + '>Pour tout le monde après chaque question</option><option value="anim"' + (o.expl === 'anim' ? ' selected' : '') + '>Seulement sur mon écran (je les explique), à tous à la fin</option></select></label>' +
+      '<button class="btn" data-a="mphost">Créer la partie</button></div>' +
+      '<p class="small muted">« Seulement sur mon écran » : pendant la partie, les téléphones affichent la bonne réponse sans l\'explication, pour que tu l\'expliques toi-même ; ' +
+      'chacun reçoit ensuite, à la fin, le corrigé complet avec les explications. Dans tous les cas, chaque joueur retrouve à la fin ses réponses, les bonnes réponses et les explications.</p>' +
       '<p class="small muted" style="margin:0">' + (mpConfigOK() ? 'Il faut Internet sur l\'écran de l\'animateur et sur les téléphones (wifi ou 4G). Un joueur qui perd la connexion ou dont le téléphone se met en veille retrouve sa place en revenant sur la page.' : '<b class="bad-t">Le jeu à plusieurs n\'est pas encore configuré</b> : renseigne l\'adresse et la clé du projet Supabase dans <code>js/config.js</code>.') + '</p></div>' +
       '<p><a href="#chrono">← Jouer seul</a> · <a href="#rejoindre">Je suis joueur : rejoindre une partie</a></p>';
   }
@@ -1690,25 +1813,33 @@ V.animer = function () {
     var url = location.protocol === 'file:' ? '' : location.origin + location.pathname + '#rejoindre/' + mp.code;
     return head + '<div class="card kready"><p class="small muted">Code de la partie</p><p class="mpcode">' + mp.code.slice(0, 3) + ' ' + mp.code.slice(3) + '</p>' +
       '<p class="muted">Sur ton téléphone : ouvre l\'application, menu « Quiz chrono », puis « Rejoindre une partie »' + (url ? ', ou va sur <b>' + esc(url) + '</b>' : '') + '.</p>' +
-      '<p><b>' + P.length + '</b> joueur' + (P.length > 1 ? 's' : '') + ' connecté' + (P.length > 1 ? 's' : '') + '</p><div class="mpnames">' + P.map(function (p) { return '<span class="tag acc">' + esc(p.name) + '</span>'; }).join('') + '</div>' +
+      '<p class="small muted">' + (mp.joue ? 'Tu joues aussi, sous le pseudo « ' + esc(mp.moi.name) + ' »' : 'Tu animes sans jouer') + ' · explications ' + (mp.expl === 'anim' ? 'seulement sur ton écran pendant la partie, à tous à la fin' : 'pour tout le monde après chaque question') + '</p>' +
+      '<p><b>' + P.length + '</b> joueur' + (P.length > 1 ? 's' : '') + ' connecté' + (P.length > 1 ? 's' : '') + (mp.joue ? ' (toi compris)' : '') + '</p><div class="mpnames">' + P.map(function (p) { return '<span class="tag acc">' + esc(p.name) + '</span>'; }).join('') + '</div>' +
       '<div class="row" style="justify-content:center;margin-top:1rem"><button class="btn big" data-a="mpstart"' + (P.length ? '' : ' disabled') + '>Lancer la partie</button>' + quit + '</div></div>';
   }
   var it = mp.items[mp.i];
   if (mp.phase === 'end') {
     var R = mpRank();
     return head + '<div class="card kready"><p class="kbig">Podium</p><div class="podium">' + [1, 0, 2].map(function (i) { var p = R[i]; return p ? '<div class="pod p' + (i + 1) + '"><b>' + esc(p.name) + '</b><span>' + p.score + ' pts</span><i>' + (i + 1) + '</i></div>' : ''; }).join('') + '</div>' +
-      (R.length > 3 ? mpTop(R, 60) : '') + '<div class="row" style="justify-content:center;margin-top:1rem">' + quit + '</div></div>';
+      (R.length > 3 ? mpTop(R, 60) : '') + (mp.joue ? '<p>Toi : <b>' + (R.indexOf(mp.moi) + 1) + (R.indexOf(mp.moi) ? 'e' : 'er') + '</b> avec ' + mp.moi.score + ' points</p>' : '') +
+      '<p class="small muted">Chaque joueur a reçu sur son téléphone le corrigé complet (ses réponses, les bonnes réponses et les explications).</p>' +
+      '<div class="row" style="justify-content:center;margin-top:1rem">' + quit + '</div></div>' + mpCorrigeHtml(mpCorrige(mp.moi), mp.joue, false);
   }
   var q = mp.phase === 'q', nrep = P.filter(function (p) { return p.ans; }).length, r = q ? mp.t0 + qLim(mp) * 1000 - Date.now() : 0;
+  var moi = mp.joue ? mp.moi : null, peutRep = q && moi && !moi.ans;
   return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (mp.i + 1) + ' / ' + mp.items.length + ' ' + nivTag(it) + '</span><span class="kscore">' + nrep + ' / ' + P.length + ' réponses</span></div>' +
     '<div class="kbar"><i' + (q ? ' style="animation-duration:' + qLim(mp) * 1000 + 'ms;animation-delay:' + (r - qLim(mp) * 1000) + 'ms"' : ' style="width:0"') + '></i></div>' +
     '<div class="card kq"><p class="qtext">' + esc(it.q) + '</p>' + (q ? '<span class="knum" id="mpnum">' + Math.max(0, Math.ceil(r / 1000)) + '</span>' : '') + '</div>' +
     '<div class="kopts">' + it.opts.map(function (o, k) {
       var n = P.filter(function (p) { return p.ans && p.ans.k === k; }).length;
-      return '<div class="kopt ' + KH_COL[k] + (q ? '' : o === it.ok ? ' good' : ' dim') + '"><span class="ol">' + (k + 1) + '</span><span>' + esc(o) + '</span>' + (!q ? '<span class="kmark">' + (o === it.ok ? '✓ ' : '') + n + '</span>' : '') + '</div>';
+      var inner = '<span class="ol">' + (k + 1) + '</span><span>' + esc(o) + '</span>' + (!q ? '<span class="kmark">' + (o === it.ok ? '✓ ' : '') + n + '</span>' : '');
+      return peutRep ? '<button class="kopt ' + KH_COL[k] + '" data-a="mphrep" data-v="' + k + '">' + inner + '</button>'   // l'animateur qui joue répond ici (ou touches 1 à 4)
+        : '<div class="kopt ' + KH_COL[k] + (q ? '' : o === it.ok ? ' good' : ' dim') + '">' + inner + '</div>';
     }).join('') + '</div>' +
+    (q && moi && moi.ans ? '<p class="small muted" style="text-align:center">Ta réponse est enregistrée.</p>' : '') +
+    (!q && moi ? '<div class="verdict ' + (moi.ans && moi.ans.ok ? 'good' : 'bad') + '"><b>' + esc(moi.name) + ' : ' + (moi.ans && moi.ans.ok ? '+' + moi.ans.gain + ' points' : moi.ans ? 'raté' : 'pas de réponse') + '</b></div>' : '') +
     (q ? '<div class="row" style="justify-content:flex-end;margin-top:1rem"><button class="btn ghost" data-a="mpreveal">Afficher la réponse</button>' + quit + '</div>'
-      : (it.ex ? '<div class="verdict good kverdict"><p class="small" style="margin:0">' + esc(it.ex) + '</p></div>' : '') + '<h2>Classement</h2>' + mpTop(mpRank(), 5) +
+      : (it.ex ? '<div class="verdict good kverdict">' + (mp.expl === 'anim' ? '<p class="small muted" style="margin:0 0 .3rem">Explication visible seulement sur ton écran (les joueurs la recevront à la fin)</p>' : '') + '<p class="small" style="margin:0">' + esc(it.ex) + '</p></div>' : '') + '<h2>Classement</h2>' + mpTop(mpRank(), 5) +
         '<div class="row" style="justify-content:flex-end;margin-top:1rem"><button class="btn big" data-a="mpnext">' + (mp.i + 1 < mp.items.length ? 'Question suivante' : 'Voir le podium') + '</button>' + quit + '</div>') + '</div>';
 };
 
@@ -1754,7 +1885,9 @@ function mpPlayerMsg(me, m) {
   else if (m.t === 'r' || m.t === 'end') {
     var num = function (v) { return Math.max(0, Math.round(+v) || 0); };
     me.phase = m.t; me.res = { ok: !!m.ok, rep: !!m.rep, gain: num(m.gain), score: num(m.score), rank: num(m.rank), nb: num(m.nb), streak: num(m.streak), bonne: String(m.bonne || ''),
-      top: Array.isArray(m.top) ? m.top.slice(0, 3).filter(Array.isArray).map(function (p) { return [String(p[0]), num(p[1])]; }) : [] };
+      mine: String(m.mine || '').slice(0, 150), ex: String(m.ex || '').slice(0, 700), anim: !!m.anim,
+      top: Array.isArray(m.top) ? m.top.slice(0, 3).filter(Array.isArray).map(function (p) { return [String(p[0]), num(p[1])]; }) : [],
+      corr: Array.isArray(m.corr) ? m.corr.slice(0, 100).filter(Array.isArray).map(function (c) { return [0, 1, 2, 3].map(function (j) { return String(c[j] == null ? '' : c[j]).slice(0, 700); }); }) : [] };
   }
   else return;
   mpDraw();
@@ -1780,8 +1913,12 @@ V.rejoindre = function (code) {
   if (mp.phase === 'fail') return head + '<div class="verdict bad"><b>' + esc(mp.err) + '</b></div><button class="btn" data-a="mpquit">Réessayer</button>';
   if (mp.phase === 'wait') return head + '<div class="card kready"><p class="kbig">C\'est bon, ' + esc(mp.name) + ' !</p><p class="muted">Regarde l\'écran de l\'animateur : la partie va commencer.</p>' + quit + '</div>';
   if (mp.phase === 'end') return head + '<div class="card kready"><p class="small muted">Classement final</p><p class="kbig">' + R.rank + (R.rank === 1 ? 'er' : 'e') + ' sur ' + R.nb + '</p><p><b>' + R.score + ' points</b></p>' +
-    (Array.isArray(R.top) ? '<ol class="mptop">' + R.top.map(function (p) { return '<li><span>' + esc(p[0]) + '</span><b>' + esc(p[1]) + '</b></li>'; }).join('') + '</ol>' : '') + quit + '</div>';
-  if (mp.phase === 'r') return head + '<div class="verdict ' + (R.ok ? 'good' : 'bad') + '"><div class="note20">' + (R.ok ? '+' + R.gain : R.rep ? 'Raté' : 'Trop tard') + '</div><b>' + (R.ok ? (R.streak > 1 ? 'Série de ' + R.streak + ' !' : 'Bonne réponse !') : 'La bonne réponse : ' + esc(R.bonne)) + '</b></div>' +
+    (Array.isArray(R.top) ? '<ol class="mptop">' + R.top.map(function (p) { return '<li><span>' + esc(p[0]) + '</span><b>' + esc(p[1]) + '</b></li>'; }).join('') + '</ol>' : '') + quit + '</div>' +
+    mpCorrigeHtml(R.corr, true, true);
+  if (mp.phase === 'r') return head + '<div class="verdict ' + (R.ok ? 'good' : 'bad') + '"><div class="note20">' + (R.ok ? '+' + R.gain : R.rep ? 'Raté' : 'Trop tard') + '</div><b>' + (R.ok ? (R.streak > 1 ? 'Série de ' + R.streak + ' !' : 'Bonne réponse !') : 'La bonne réponse : ' + esc(R.bonne)) + '</b>' +
+    (!R.ok && R.mine ? '<p class="small" style="margin:.3rem 0 0">Ta réponse : ' + esc(R.mine) + '</p>' : '') + '</div>' +
+    (R.ex ? '<div class="card"><p class="small muted" style="margin:0 0 .3rem">Explication</p><p class="small" style="margin:0">' + esc(R.ex) + '</p></div>'
+      : R.anim ? '<p class="small muted">L\'animateur explique la réponse. Tu retrouveras toutes les explications à la fin de la partie.</p>' : '') +
     '<div class="card kready"><p class="kbig">' + R.rank + (R.rank === 1 ? 'er' : 'e') + ' / ' + R.nb + '</p><p>' + R.score + ' points</p></div>' + quit;
   var Q = mp.q, rr = mp.t0 + Q.lim * 1000 - Date.now();
   return '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (Q.i + 1) + ' / ' + Q.n + ' ' + nivTag(Q) + '</span><span class="knum sm" id="mpnum">' + Math.max(0, Math.ceil(rr / 1000)) + '</span></div>' +
@@ -2208,6 +2345,8 @@ var ACT = {
   setoption: function (el) { S.option = el.dataset.v; flash = null; kh = null; oral = null; exo = null; refreshThemeStats(); fixSel(); save(); applyTheme(); render(); },
   setep: function (el) { S.ep = el.dataset.v; fixSel(); save(); rerender(); },
   setmat: function (el) { S.mat = el.dataset.v; save(); rerender(); },
+  setpopt: function (el) { V.pronos.opt = el.dataset.v; rerender(); },
+  setpcomb: function (el) { V.pronos.combine = el.dataset.v === '1'; rerender(); },
   goep: function (el) { S.ep = el.dataset.v; fixSel(); save(); go(el.dataset.to === 'flash' ? '#flash/deck/' + el.dataset.v : '#' + el.dataset.to); },
   gotheme: function (el) { go('#biblio/theme/' + el.dataset.v); },
   clearsearch: function () { V.biblio.f.q = ''; V.biblio.f.theme = ''; $('#search').value = ''; go('#biblio'); },
@@ -2309,7 +2448,13 @@ var ACT = {
       V.quiz.sujet = ''; rerender(); toast(Math.min(qs.length, place) + ' question(s) ajoutée(s) au quiz.');
     } catch (x) { erreurImport(err, x); }
   },
-  mphost: function () { mpHost($('#mpSrc').value, +$('#mpLim').value); rerender(); },
+  mphost: function () {
+    var joue = $('#mpRole').value === 'joue', pseudo = $('#mpPseudo').value.replace(/\s+/g, ' ').trim().slice(0, 20);
+    if (joue && !pseudo) { toast('Choisis ton pseudo pour le classement.'); $('#mpPseudo').focus(); return; }
+    V.animer.o = { joue: joue, pseudo: pseudo, expl: $('#mpExpl').value };
+    mpHost($('#mpSrc').value, +$('#mpLim').value, V.animer.o); rerender();
+  },
+  mphrep: function (el) { if (mp && mp.host && mp.joue && mp.phase === 'q') mpAnswer('jhost', { i: mp.i, k: +el.dataset.v }); },
   mpstart: function () { if (!mp || !mp.host || mp.phase !== 'lobby') return; mp.items = khItems(mp.key); mp.i = -1; if (!mp.items.length) { toast('Pas assez de questions pour ce choix.'); return; } mpNextQ(); },
   mpreveal: function () { if (mp && mp.host && mp.phase === 'q') mpReveal(); },
   mpnext: function () { if (mp && mp.host && mp.phase === 'r') mpNextQ(); },
@@ -2436,10 +2581,12 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Enter' && e.target.id === 'pyrep' && e.target.tagName === 'INPUT' && !py.done) { e.preventDefault(); ACT.pycheck(); }
   if (mp && !mp.host && mp.phase === 'q' && curRoute === 'rejoindre' && /^[1-4]$/.test(e.key) && !(e.target.matches && e.target.matches('input,textarea,select'))) { e.preventDefault(); mpChoose(+e.key - 1); }
   if (e.key === 'Enter' && (e.target.id === 'mpCode' || e.target.id === 'mpName')) { e.preventDefault(); ACT.mpjoin(); }
+  if (mp && mp.host && mp.joue && mp.phase === 'q' && curRoute === 'animer' && /^[1-4]$/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey && !(e.target.matches && e.target.matches('input,textarea,select'))) { e.preventDefault(); ACT.mphrep({ dataset: { v: String(+e.key - 1) } }); }
   if (kh && kh.phase === 'q' && curRoute === 'chrono' && /^[1-4]$/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey && !(e.target.matches && e.target.matches('input,textarea,select'))) { e.preventDefault(); ACT.khrep({ dataset: { v: String(+e.key - 1) } }); }
 });
 document.addEventListener('change', function (e) {
   var t = e.target;
+  if (t.id === 'mpRole') { var pl = $('#mpPseudoL'); if (pl) { pl.hidden = t.value !== 'joue'; if (!pl.hidden) $('#mpPseudo').focus(); } }
   if (t.id === 'optSel') { S.option = t.value; fixSel(); flash = null; kh = null; oral = null; exo = null; refreshThemeStats(); save(); render(); }
   if (t.id === 'bImp') { V.biblio.f.imp = t.value; rerender(); }
   if (t.id === 'docSel' && t.value) { keepRep(); session.pdf = true; session.page = +t.value; rerender(); }
