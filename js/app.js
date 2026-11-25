@@ -820,10 +820,45 @@ V.annales = function (sid, pageArg) {
     ents.map(function (s) {
       return '<tr><td>' + esc(MATIERES[s.mat][0]) + '</td><td><a href="#annales/' + s.id + '">' + esc(s.cas) + '</a></td>' + avancement(s) + '<td><div class="row"><button class="btn ghost small" data-a="startsujet" data-id="' + s.id + '">M\'interroger</button><a class="btn ghost small" href="#annales/' + s.id + '">Documents et corrections</a></div></td></tr>';
     }).join('') + '</table></div>';
+  if (window.ANCIENS && S.option !== 'SLAM') {
+    var nA = ANCIENS.sujets.length, nE7 = ANCIENS.questions.filter(function (q) { return q.usage === 'e7'; }).length;
+    h += '<h2>Anciens sujets SISR (avant la réforme, 2015 à 2021)</h2><div class="card"><p>' + nA + ' études de cas de l\'ancienne épreuve E4 « Conception et maintenance de solutions informatiques », métropole et Nouvelle-Calédonie, rangées à part : elles ne comptent pas dans les statistiques. ' +
+      'Environ ' + Math.round(nE7 / ANCIENS.questions.length * 100) + ' % de leurs questions portent sur la cybersécurité et servent pour l\'E7 ; les autres sont surtout de l\'infrastructure (utile pour l\'E6).</p>' +
+      '<a class="btn" href="#anciens">Voir les anciens sujets SISR</a></div>';
+  }
   return h + '<h2>Sources officielles</h2><div class="card"><ul>' +
     '<li><a target="_blank" rel="noopener" href="https://www.reseaucerta.org/sujet-examen/sujets-dexamen-e6-cyberscurit-des-services-informatiques/">Réseau Certa — sujets E7 Cybersécurité</a> (y compris Nouvelle-Calédonie et sujets de secours, utiles pour s\'entraîner davantage)</li>' +
     '<li><a target="_blank" rel="noopener" href="https://www.reseaucerta.org/sujets-dexamen-cejm/">Réseau Certa — sujets CEJM du BTS SIO</a> (le sujet 2026 n\'y était pas encore publié lors de la création de l\'application)</li></ul>' +
     '<p class="small muted">Pas d\'annales officielles dans l\'application pour E1, E2 et E3, ni pour E5 et E6 (épreuves orales et pratiques sans sujet écrit) : les études de cas d\'entraînement ci-dessus les remplacent.</p></div>';
+};
+
+/* — Anciens sujets SISR (épreuve E4 d'avant la réforme, 2015-2021 ; data/anciens.js, généré par tools/build_anciens.py) —
+   Rangés à part : pas de corrigé (ceux du Réseau Certa sont réservés aux enseignants), non comptés dans les statistiques ni dans l'étude de cas aléatoire.
+   Chaque question porte un « usage » relu à la main : e7 (cybersécurité), e6 (infrastructure), e5 (gestion, ITIL, coûts), et pour e7 les thèmes travaillés (q.themes). */
+var USAGE_ANC = { e7: ['Utile pour l\'E7', 'i3'], e6: ['Infrastructure (E6)', ''], e5: ['Gestion, ITIL (E5)', ''], autre: ['Non classée', ''] };
+V.anciens = function (sid) {
+  if (V.anciens.f == null) V.anciens.f = 'e7';   // par défaut : les questions utiles pour l'E7 ('' = toutes)
+  var A = window.ANCIENS || { sujets: [], questions: [] }, f = V.anciens.f;
+  var head = '<p><a href="#annales">← Sujets et corrections</a></p><h1>Anciens sujets SISR</h1><p class="lead">Études de cas de l\'ancienne épreuve E4 « Conception et maintenance de solutions informatiques » (option SISR), sessions 2015 à 2021, métropole et Nouvelle-Calédonie (Réseau Certa, licence CC BY-NC-SA). ' +
+    'Le programme a changé depuis : ces sujets contiennent beaucoup d\'infrastructure et un peu moins de cybersécurité que l\'E7 actuelle. Ils sont rangés à part et ne comptent pas dans les « Thèmes à réviser ». Pas de corrigé : ceux du Réseau Certa sont réservés aux enseignants.</p>';
+  var chips = '<div class="chips">' + [['e7', 'Questions utiles pour l\'E7'], ['', 'Toutes les questions'], ['e6', 'Infrastructure (E6)'], ['e5', 'Gestion, ITIL (E5)']].map(function (x) {
+    var n = A.questions.filter(function (q) { return (!sid || q.sujet === sid) && (!x[0] || q.usage === x[0]); }).length;
+    return '<button class="chip' + (f === x[0] ? ' on' : '') + '" data-a="ancf" data-v="' + x[0] + '">' + x[1] + ' <i>' + n + '</i></button>';
+  }).join('') + '</div><p class="small muted">Classement relu question par question. Ce qu\'ils entraînent pour l\'E7 : surtout les règles de filtrage, la sauvegarde, l\'authentification et le chiffrement ; presque rien sur le RGPD, la journalisation ou l\'analyse de risques, très présents dans l\'E7 actuelle.</p>';
+  var s = sid && A.sujets.filter(function (x) { return x.id === sid; })[0];
+  var sujets = s ? [s] : A.sujets.slice().sort(function (a, b) { return b.annee - a.annee || (a.zone === 'Métropole' ? -1 : 1); });
+  var h = head + (s ? '<p><a href="#anciens">← Tous les anciens sujets</a></p>' : '') + chips;
+  sujets.forEach(function (x) {
+    var qs = A.questions.filter(function (q) { return q.sujet === x.id && (!f || q.usage === f); });
+    h += '<h2>' + x.annee + ' — ' + esc(x.cas) + (x.zone !== 'Métropole' ? ' <span class="tag acc">Nouvelle-Calédonie</span>' : '') + '</h2>' +
+      '<div class="row" style="margin-bottom:.6rem"><a class="btn ghost small" target="_blank" rel="noopener" href="' + x.fichier + '">Sujet PDF (' + x.pages + ' pages)</a>' + (s ? '' : '<a class="btn ghost small" href="#anciens/' + x.id + '">Ce sujet seulement</a>') + '</div>' +
+      (qs.length ? qs.map(function (q) {
+        var u = USAGE_ANC[q.usage] || USAGE_ANC.autre;
+        return '<div class="card"><p class="small muted" style="margin:0 0 .2rem">' + esc(q.dossier) + '</p><p class="qtext">Question ' + esc(q.num) + ' — ' + esc(q.texte) + '</p>' +
+          '<div class="row"><span class="tag ' + u[1] + '">' + u[0] + '</span>' + (q.themes || []).filter(function (t) { return THEMES[t]; }).map(function (t) { return '<span class="tag acc">' + esc(THEMES[t][0]) + '</span>'; }).join('') + '<a class="btn ghost small" target="_blank" rel="noopener" href="' + x.fichier + '#page=' + q.page + '">Voir dans le sujet (p. ' + q.page + ')</a></div></div>';
+      }).join('') : '<p class="small muted">Aucune question de ce type dans ce sujet.</p>');
+  });
+  return h;
 };
 
 /* — Mes notes : moyenne par matière, par épreuve et moyenne générale pondérée par les coefficients —
@@ -2346,6 +2381,7 @@ var ACT = {
   setep: function (el) { S.ep = el.dataset.v; fixSel(); save(); rerender(); },
   setmat: function (el) { S.mat = el.dataset.v; save(); rerender(); },
   setpopt: function (el) { V.pronos.opt = el.dataset.v; rerender(); },
+  ancf: function (el) { V.anciens.f = el.dataset.v; rerender(); },
   setpcomb: function (el) { V.pronos.combine = el.dataset.v === '1'; rerender(); },
   goep: function (el) { S.ep = el.dataset.v; fixSel(); save(); go(el.dataset.to === 'flash' ? '#flash/deck/' + el.dataset.v : '#' + el.dataset.to); },
   gotheme: function (el) { go('#biblio/theme/' + el.dataset.v); },
