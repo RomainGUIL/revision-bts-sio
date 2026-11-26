@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Genere data/anciens.js a partir des anciens sujets SISR (avant la reforme) places dans sujets/anciens/SISR_*.pdf.
+"""Genere data/anciens.js a partir des anciens sujets SISR et SLAM (avant la reforme) places dans sujets/anciens/SISR_*.pdf et SLAM_*.pdf.
 Usage : python tools/build_anciens.py   (depuis la racine de l'application, necessite `pip install pypdf`)
 
 Ces sujets sont ceux de l'ancienne epreuve E4 « Conception et maintenance de solutions informatiques » (option SISR),
@@ -19,6 +19,11 @@ DOSSIER = os.path.join(APP, 'sujets', 'anciens')
 
 SEC = r'secur|filtrage|regle|pare-feu|parefeu|vpn|certificat|https|ssl|tls|faille|vulnerab|attaque|risque|journa|ssh|chiffr|rgpd|authentif|portail captif|comptes? (d.utilisateur|utilisateur|administrat|inactif|desactiv|inutilis)|suppression de(s)? comptes?|virus|menace|sauvegard|suspect|nmap|audit|habilitation|acces aux locaux|piratage|intrus|confidentialit|syslog|integrite|force brute'
 GES = r'itil|incident|probleme|tco|cout|sla|contrat|priorit|categorie|cloud|maintenance|fournisseur|devis|commercialisation|gestion de parc'
+# Option SLAM : developpement (utile pour l'E6 SLAM) et themes E7 SLAM reconnus par mots-cles.
+SEC_SLAM = r'secur|injection|xss|csrf|faille|vulnerab|attaque|hach|mot(s)? de passe|authentif|chiffr|certificat|https|rgpd|donnees? personnelle|cnil|droits? (d.acces|sur|des utilisateurs)|grant|revoke|privileg|habilitation|journa|trace|tracab|jeton|token|session|cookie|confidentialit|integrite|piratage|sauvegard'
+DEV = r'sql|requete|table|cle (primaire|etrangere)|schema|modele|mcd|mld|uml|classe|methode|attribut|objet|heritage|interface|fonction|procedure|declencheur|trigger|algorithme|code|programme|variable|boucle|tableau|test|xml|json|api|service web|application|base de donnees|vue|index|contrainte|diagramme|cas d.utilisation|developp|langage|framework|instruction'
+THEMES_SLAM = [('injection', r'injection'), ('xss', r'xss|csrf|script'), ('sqldroits', r'grant|revoke|privileg|droits? (d.acces|sur)|habilitation'), ('mdp', r'hach|mot(s)? de passe'),
+               ('auth', r'authentif|jeton|token|session|cookie|habilitation'), ('crypto', r'chiffr|certificat|https|signature'), ('rgpd', r'rgpd|donnees? personnelle|cnil'), ('logs', r'journa|trace|tracab'), ('trigger', r'declencheur|trigger')]
 INF = r'vlan|adress|\bip\b|dhcp|dns|rout|commutateur|spanning|rstp|qos|agregation|etherchannel|ipv6|virtuel|esx|\bsan\b|raid|stockage|ansible|playbook|crontab|configur|debit|interface|borne|wi-fi|wifi|serveur|snmp|cluster|disponibilit|liaison|cablage|onduleur|oid|supervision'
 
 
@@ -53,6 +58,16 @@ MANUEL = {
     'LINS-Nouvelle-Caledonie#A2.2': 'e7 filtrage', 'LINS-Nouvelle-Caledonie#A2.3': 'e7 sauvegarde', 'LINS-Nouvelle-Caledonie#B1.1': 'e7 malware',
     'LINS-Nouvelle-Caledonie#B1.2': 'e7 malware filtrage', 'LINS-Nouvelle-Caledonie#B1.3': 'e7 auth crypto', 'LINS-Nouvelle-Caledonie#B2.1': 'e7 incident',
     'LINS-Nouvelle-Caledonie#B2.2': 'e7 incident', 'LINS-Nouvelle-Caledonie#B2.3': 'e7 supervision',
+    # SLAM (relu a la main, novembre 2026) : corrige les faux positifs des mots-cles (« calculs chiffres », « en integrant »…).
+    'AEROPLAN-Nouvelle-Caledonie#3.1': 'e6', 'SUPMASTER#4': 'e6', 'TRISEL#5': 'e6', 'AHM-23#2.3': 'e6', 'Vins-de-France-Nouvelle-Caledonie#1.2': 'e6',
+    'TRISEL#3': 'e7 auth', 'DEMGUIV-Nouvelle-Caledonie#11': 'e7 risques', 'AHM-23#1.3': 'e7 auth', 'AHM-23#1.4': 'e7 sauvegarde', 'AHM-23#1.5': 'e7 sauvegarde',
+    'Localux-Nouvelle-Caledonie#3.3': 'e5', 'WebCaisse#4.1': 'e5', 'HackatInnov#D.2': 'e7 archi',
+    'Vins-de-France-Nouvelle-Caledonie#4.1': 'e7 crypto', 'Vins-de-France-Nouvelle-Caledonie#4.2': 'e7 auth', 'Vins-de-France-Nouvelle-Caledonie#4.3': 'e7 injection',
+    'Vins-de-France-Nouvelle-Caledonie#4.4': 'e7 auth mdp',
+    'EQUIDA#1.1': 'e6', 'EQUIDA#1.2': 'e6', 'EQUIDA#3.2': 'e6', 'EQUIDA#5.2': 'e5', 'GEST-PC-Nouvelle-Caledonie#1.2': 'e6', 'GEST-PC-Nouvelle-Caledonie#1.3': 'e6',
+    'GEST-PC-Nouvelle-Caledonie#2.2': 'e6', 'SUPMASTER#5': 'e6', 'SUPMASTER#10': 'e6', 'MUSIC-Nouvelle-Caledonie#2': 'e5', 'MUSIC-Nouvelle-Caledonie#3': 'e5',
+    'MUSIC-Nouvelle-Caledonie#5': 'e6', 'DEMGUIV-Nouvelle-Caledonie#1': 'e6', 'DEMGUIV-Nouvelle-Caledonie#2': 'e6', 'DANE-Nouvelle-Caledonie#4.4': 'e6',
+    'WebCaisse#4.3': 'e5', 'Restiloc#4.2': 'e5', 'Restiloc#4.3': 'e5', 'Restiloc#4.4': 'e5', 'Coopain#4.2': 'e5', 'Vins-de-France-Nouvelle-Caledonie#1.4': 'e6',
 }
 
 
@@ -60,8 +75,10 @@ def sans_accents(s):
     return unicodedata.normalize('NFD', s.lower()).encode('ascii', 'ignore').decode()
 
 
-def usage(texte):
+def usage(texte, opt='SISR'):
     t = sans_accents(texte)
+    if opt == 'SLAM':
+        return 'e7' if re.search(SEC_SLAM, t) else 'e5' if re.search(GES, t) else 'e6' if re.search(DEV, t) else 'autre'
     return 'e7' if re.search(SEC, t) else 'e5' if re.search(GES, t) else 'e6' if re.search(INF, t) else 'autre'
 
 
@@ -86,15 +103,56 @@ def enonce(s):
 DEBUT = re.compile(r'^ ?(Question\s*)?([A-D])\s?\.?\s?(\d)\s?\.\s?(\d)(?:\.\d)?\b\s*(:)?\s*', re.M)
 FIN = re.compile(r'\n ?(?:(?:Question\s*)?[A-D]\s?\.?\s?\d\s?\.\s?\d\b|Dossier|DOSSIER|Partie [A-D]|PARTIE|Mission|Document|DOCUMENT|Annexe|ANNEXE|BTS S|EXAMEN|Code sujet|SESSION)')
 
+def questions_slam(sid, pages):
+    """Sujets SLAM : trois numerotations selon les annees.
+    « Question A.2.1 » (2020-2021), « 1.1 » ou « 1.1 - » dans les blocs « TRAVAIL A FAIRE » (2013, 2017-2019), ou « 7. » numerote
+    sur tout le sujet (2014-2016). On garde la numerotation qui trouve le plus de questions, rangees par mission."""
+    MIS = re.compile(r'^ ?(?:Mission|MISSION|Dossier|DOSSIER|Partie|PARTIE) ?([A-D]?\.?\d?)\b\s*[-–—:]?\s*([^\n]{0,110})', re.M)
+    FORMES = [
+        re.compile(r'^ ?Question\s*([A-D])\s?\.?\s?(\d)(?:\s?\.\s?(\d))?\b\s*[-–—:.]?', re.M),
+        re.compile(r'^ ?(?:Question\s*)?(\d)\s?\.\s?(\d)(?![\d.])\s*[-–—:.)]?', re.M),
+        re.compile(r'^ ?(\d{1,2})\.\s+(?=[A-ZÀÂÉÈÊÎÔ])', re.M),
+    ]
+    VERBE = r'(modifier|expliquer|ecrire|proposer|rediger|coder|indiquer|fournir|realiser|presenter|donner|justifier|completer|preciser|decrire|concevoir|lister|identifier|analyser|mettre|calculer|definir|citer|choisir|expliciter|etablir|creer|montrer|argumenter|afin|dans le cadre|a partir|en vous|apres|sachant|representer|elaborer|completez|programmer|implementer|traduire|corriger|construire|determiner|evaluer|comparer|enumerer|recenser)'
+    STOP = re.compile(r'\n ?(?:Mission|MISSION|Dossier|DOSSIER|Partie|PARTIE|Document|DOCUMENT|Annexe|ANNEXE|IMPORTANT|BTS S|Code sujet|SESSION)\b')
+    pages = [(n, re.sub(r'[ \t\r\xa0]+', ' ', x)) for n, x in pages]
+    meilleur = []
+    for k, ITEM in enumerate(FORMES):
+        trouve, vus, mission = [], set(), ''
+        for n, x in pages:
+            if n < 2: continue
+            evts = [(m.start(), 'm', m) for m in MIS.finditer(x)]
+            for m in ITEM.finditer(x):
+                avant = sans_accents(x[max(0, m.start() - 2500):m.start() + 12])
+                if k == 0 or 'travail a faire' in avant or re.search(r'question\s*\d', avant) or re.match(VERBE, sans_accents(x[m.end():m.end() + 30]).lstrip(' -:.)')):
+                    evts.append((m.start(), 'q', m))
+            evts.sort(key=lambda e: e[0])
+            for i, (pos, typ, m) in enumerate(evts):
+                if typ == 'm':
+                    mission = propre(m.group(0)); continue
+                num = '.'.join(g for g in m.groups() if g)
+                if num in vus: continue
+                fin = evts[i + 1][0] if i + 1 < len(evts) else len(x)
+                st = STOP.search(x, m.end())
+                if st and st.start() < fin: fin = st.start()
+                texte = enonce(propre(x[m.end():fin]))[:900]
+                if len(texte) < 15: continue
+                vus.add(num)
+                trouve.append({'id': sid + '#' + num, 'sujet': sid, 'num': num, 'page': n, 'dossier': mission, 'texte': texte, 'usage': usage(texte, 'SLAM')})
+        if len(trouve) > len(meilleur): meilleur = trouve
+        if k < 2 and len(meilleur) >= 6: break   # numerotation precise trouvee : inutile d'essayer « 7. »
+    return meilleur
+
+
 out = {'sujets': [], 'questions': []}
-for p in sorted(glob.glob(os.path.join(DOSSIER, 'SISR_*.pdf'))):
+for p in sorted(glob.glob(os.path.join(DOSSIER, 'SISR_*.pdf')) + glob.glob(os.path.join(DOSSIER, 'SLAM_*.pdf'))):
     sid = os.path.basename(p)[:-4]
-    _, an, cas = sid.split('_', 2)
+    opt, an, cas = sid.split('_', 2)
     zone = 'Nouvelle-Calédonie' if cas.endswith('-Nouvelle-Caledonie') else 'Métropole'
     cas = re.sub(r'-Nouvelle-Caledonie$', '', cas).replace('-', ' ')
     pages = [(i + 1, re.sub(r'[ \t\xa0]+', ' ', x.extract_text() or '')) for i, x in enumerate(pypdf.PdfReader(p).pages)]
-    trouve, vus = [], set()
-    for stricte in (True, False):   # d'abord « Question » ou « : » obligatoires ; sinon on accepte aussi « A.1.1 Texte »
+    trouve, vus = ([], set()) if opt == 'SISR' else (questions_slam(sid, pages), set())
+    for stricte in ((True, False) if opt == 'SISR' else ()):   # d'abord « Question » ou « : » obligatoires ; sinon on accepte aussi « A.1.1 Texte »
         trouve, vus, dossier = [], set(), ''
         for n, x in pages:
             if n < 3: continue
@@ -111,23 +169,25 @@ for p in sorted(glob.glob(os.path.join(DOSSIER, 'SISR_*.pdf'))):
                 d = re.findall(r'^ ?((?:Dossier|DOSSIER|Partie|PARTIE) [A-D]\b[^\n]{0,110})', avant, re.M)
                 if d: dossier = propre(d[-1])
                 vus.add(num)
-                trouve.append({'id': sid + '#' + num, 'sujet': sid, 'num': num, 'page': n, 'dossier': dossier, 'texte': texte, 'usage': usage(texte)})
+                trouve.append({'id': sid + '#' + num, 'sujet': sid, 'num': num, 'page': n, 'dossier': dossier, 'texte': texte, 'usage': usage(texte, opt)})
         if len(trouve) >= 8: break
-    trouve.sort(key=lambda q: (q['num'][0], [int(v) for v in q['num'][1:].split('.')]))
+    trouve.sort(key=lambda q: (q['num'][0] if q['num'][0].isalpha() else '', [int(v) for v in re.findall('[0-9]+', q['num'])]))
     for q in trouve:
         cle = sid.split('_', 2)[2] + '#' + q['num']
         m = MANUEL.get(cle)
         if m: q['usage'] = m.split()[0]
         q['themes'] = m.split()[1:] if m else []
+        if opt == 'SLAM' and not m and q['usage'] == 'e7':
+            t = sans_accents(q['texte']); q['themes'] = [th for th, rx in THEMES_SLAM if re.search(rx, t)][:3]
         if q['usage'] == 'e7' and not q['themes']: print('  A CLASSER (e7 sans theme) :', cle)
-    out['sujets'].append({'id': sid, 'annee': int(an), 'cas': cas, 'zone': zone, 'fichier': 'sujets/anciens/' + sid + '.pdf', 'pages': len(pages)})
+    out['sujets'].append({'id': sid, 'option': opt, 'annee': int(an), 'cas': cas, 'zone': zone, 'fichier': 'sujets/anciens/' + sid + '.pdf', 'pages': len(pages)})
     out['questions'] += trouve
     u = {}
     for q in trouve: u[q['usage']] = u.get(q['usage'], 0) + 1
     print(sid, len(trouve), 'questions', u)
 
 js = ('/* GENERE par tools/build_anciens.py - ne pas modifier a la main.\n'
-      '   Anciens sujets SISR (epreuve E4 avant la reforme, 2015-2021), source Reseau Certa (CC BY-NC-SA 4.0).\n'
+      '   Anciens sujets SISR (2015-2021) et SLAM (2013-2021) de l ancienne epreuve E5 ecrite, source Reseau Certa (CC BY-NC-SA 4.0).\n'
       '   Separes des annales actuelles : non comptes dans les statistiques. « usage » et « themes » = classement relu a la main. */\n'
       'window.ANCIENS = ' + json.dumps(out, ensure_ascii=False, indent=1) + ';\n')
 open(os.path.join(APP, 'data', 'anciens.js'), 'w', encoding='utf-8').write(js)
