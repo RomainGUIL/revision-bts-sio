@@ -972,6 +972,22 @@ V.notes = function () {
 function tpTabs(opt) {   // onglets SISR / SLAM, seulement si aucune option n'est choisie
   return S.option ? '' : '<div class="chips">' + ['SISR', 'SLAM'].map(function (o) { return '<button class="chip' + (opt === o ? ' on' : '') + '" data-a="tpf" data-k="opt" data-v="' + o + '">TP ' + o + '</button>'; }).join('') + '</div>';
 }
+/* TP du Réseau Certa (« Côté labo », data/tp_certa.js) : liens vers la page du TP, le filtre d'intérêt s'applique aussi. */
+function tpCerta(opt, f) {
+  var all = (window.TP_CERTA || []).filter(function (t) { return t[1] === opt; });
+  if (!all.length) return '';
+  var LBL = { 3: 'Indispensable', 2: 'Utile', 1: 'Complément' };
+  var list = all.filter(function (t) { return !f.imp || t[5] === +f.imp; }).sort(function (a, b) { return b[5] - a[5] || b[4] - a[4]; });
+  var faits = all.filter(function (t) { return S.tpdone[t[0]]; }).length;
+  return '<h2>TP du Réseau Certa (' + all.length + ')</h2><p class="small muted">Travaux pratiques publiés par le Réseau Certa, le site des enseignants de BTS SIO (rubrique « Côté labo »). Consignes et fichiers en téléchargement libre sur la page du TP ; les corrigés sont réservés aux enseignants. ' + faits + ' faits sur ' + all.length + '.' + (f.an ? ' Le filtre par année de formation ne s\'applique pas à ces TP.' : '') + '</p>' +
+    (list.length ? '<div class="cols">' + list.map(function (t) {
+      var done = S.tpdone[t[0]];
+      return '<div class="card notion tp' + (done ? ' done' : '') + '"><h4>' + esc(t[2]) + '</h4><div class="row tags"><span class="tag i' + t[5] + '">' + LBL[t[5]] + '</span><span class="tag">Réseau Certa' + (t[4] ? ' · ' + t[4] : '') + '</span>' + t[6].split(' ').map(function (e) { return '<span class="tag acc">' + e + '</span>'; }).join('') + '</div>' +
+        '<p class="small">' + esc(t[7]) + '</p><div class="row"><a class="btn small" target="_blank" rel="noopener" href="https://www.reseaucerta.org/' + t[3] + '/">Ouvrir le TP</a>' +
+        '<button class="btn ghost small' + (done ? ' on' : '') + '" data-a="tpdone" data-id="' + t[0] + '">' + (done ? 'Fait ✓' : 'Marquer comme fait') + '</button>' +
+        t[8].split(' ').filter(function (x) { return THEMES[x]; }).slice(0, 2).map(function (x) { return '<button class="btn ghost small" data-a="gotheme" data-v="' + x + '" title="Notions liées">' + esc(THEMES[x][0]) + '</button>'; }).join('') + '</div></div>';
+    }).join('') + '</div>' : '<div class="card"><p class="muted">Aucun TP du Réseau Certa pour ce filtre.</p></div>');
+}
 function tpSlam(f) {
   var list = TP_SLAM.filter(function (t) { return (!f.imp || t[4] === +f.imp) && (!f.an || t[1] === +f.an); })
     .sort(function (a, b) { return b[4] - a[4] || a[2].localeCompare(b[2]); });
@@ -989,7 +1005,7 @@ function tpSlam(f) {
         '<p class="small">' + esc(t[6]) + '</p><details><summary>Voir le TP</summary><p><b>Objectif :</b> ' + esc(t[8]) + '</p><ol>' + t[9].map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ol><p class="small"><b>À savoir montrer :</b> ' + esc(t[10]) + '</p></details>' +
         '<div class="row"><button class="btn ghost small' + (done ? ' on' : '') + '" data-a="tpdone" data-id="' + t[0] + '">' + (done ? 'Fait ✓' : 'Marquer comme fait') + '</button>' +
         t[7].split(' ').filter(function (x) { return THEMES[x]; }).slice(0, 2).map(function (x) { return '<button class="btn ghost small" data-a="gotheme" data-v="' + x + '" title="Notions liées">' + esc(THEMES[x][0]) + '</button>'; }).join('') + '</div></div>';
-    }).join('') + '</div>' +
+    }).join('') + '</div>' + tpCerta('SLAM', f) +
     '<h2>Autres sites utiles en SLAM</h2><div class="card"><ul>' + TP_AUTRES_SLAM.map(function (a) { return '<li><a target="_blank" rel="noopener" href="' + a[1] + '">' + esc(a[0]) + '</a> — <span class="small">' + esc(a[2]) + '</span></li>'; }).join('') + '</ul></div>';
 }
 V.tp = function () {
@@ -1010,7 +1026,7 @@ V.tp = function () {
         '<p class="small">' + esc(t[7]) + '</p><div class="row"><a class="btn small" target="_blank" rel="noopener" href="' + url + '">Ouvrir le TP</a>' +
         '<button class="btn ghost small' + (done ? ' on' : '') + '" data-a="tpdone" data-id="' + t[0] + '">' + (done ? 'Fait ✓' : 'Marquer comme fait') + '</button>' +
         t[8].split(' ').filter(function (x) { return THEMES[x]; }).slice(0, 2).map(function (x) { return '<button class="btn ghost small" data-a="gotheme" data-v="' + x + '" title="Notions liées">' + esc(THEMES[x][0]) + '</button>'; }).join('') + '</div></div>';
-    }).join('') + '</div>' +
+    }).join('') + '</div>' + tpCerta('SISR', f) +
     '<h2>Autres sites de TP</h2><div class="card"><ul>' + TP_AUTRES.map(function (a) { return '<li><a target="_blank" rel="noopener" href="' + a[1] + '">' + esc(a[0]) + '</a> — <span class="small">' + esc(a[2]) + '</span></li>'; }).join('') + '</ul>' +
     '<p class="small muted">Source principale : Yahn Le Prettre, <a target="_blank" rel="noopener" href="' + TP_SOURCES[1].repo + '">cours SISR 1re année</a> et <a target="_blank" rel="noopener" href="' + TP_SOURCES[2].repo + '">2e année</a>, licence CC BY-NC-SA 4.0 (usage personnel et gratuit autorisé). Les liens « Autres sites » n\'ont pas pu être vérifiés page par page.</p></div>';
 };

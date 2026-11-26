@@ -23,7 +23,7 @@ La progression reste dans ce navigateur, sous la clé `bts-sio-revision-v1`. La 
 | Préparer les oraux | Simulateur, duel oral à deux (l'un répond, l'autre joue le prof et note avec une grille sur 20, puis on inverse) et réalisations E5/E6 |
 | Préparer un contrôle | Import de cours ; avec l'IA : dossier complet, questions en plus, ou sujet type BTS rédigé d'après les annales de la même épreuve, à passer en examen blanc avec une note pondérée par le barème |
 | Jouer et réviser en QCM | Quiz chrono façon Kahoot (ou sans chrono), seul ou à plusieurs (code de partie, via Supabase Realtime) ; « Mes quiz » pour écrire ses questions ou les faire écrire par l'IA, et les partager |
-| Pratiquer | Exercices réseau, maths/Python et TP SISR |
+| Pratiquer | Exercices réseau, SQL, maths/Python ; TP SISR (cours publics), TP SLAM (écrits pour l’application) et 30 TP du Réseau Certa « Côté labo » (liens, `data/tp_certa.js`) |
 | S'organiser | Planning, notes d'entraînement et sauvegardes |
 | Consulter les sources | Annales PDF et thèmes à réviser |
 | Retrouver son travail | Bouton « Reprendre où j’en étais », brouillons conservés après fermeture |
