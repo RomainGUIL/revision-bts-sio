@@ -1596,7 +1596,7 @@ function qcmBuild(src) {
     var pool = /-/.test(src) ? khOptPool(src) : flashNotions().filter(function (n) { return MATIERES[n.mat][2] === src && window.QCM && QCM[n.id]; });
     items = tirageProgressif(pool.map(function (n) { return { n: n, niv: QCM[n.id][0] }; }), 10).map(function (x) {
       var Q = QCM[x.n.id];
-      return { q: Q[1], ok: Q[2], opts: shuffle(Q.slice(2, 6)), ex: x.n.a, niv: Q[0], n: x.n };   // explication = la fiche complète de la notion
+      return { q: Q[1], ok: Q[2], opts: shuffle(Q.slice(2, 6)), ex: (window.FLASH_SIMPLE || {})[x.n.id] || x.n.a, full: x.n.a, niv: Q[0], n: x.n };   // explication courte = « l'essentiel » ; la fiche complète reste dépliable
     });
   }
   items.forEach(function (it) { it.auto = tempsAuto(it); });
@@ -1667,7 +1667,8 @@ V.chrono = function (src, arg) {
       return '<button class="kopt ' + KH_COL[k] + cls + '" data-a="khrep" data-v="' + k + '"' + (q ? '' : ' disabled') + '><span class="ol">' + (k + 1) + '</span><span>' + esc(o) + '</span>' + (!q && o === it.ok ? '<span class="kmark">✓</span>' : '') + '</button>';
     }).join('') + '</div>' +
     (!q ? '<div class="verdict kverdict ' + (kh.rep >= 0 && it.opts[kh.rep] === it.ok ? 'good' : 'bad') + '"><b>' + (kh.rep < 0 ? 'Temps écoulé !' : it.opts[kh.rep] === it.ok ? 'Bonne réponse : +' + kh.gain + ' points' + (kh.streak > 1 ? ' (série de ' + kh.streak + ')' : '') : 'Raté !') + '</b>' + (it.ex ? '<p class="small" style="margin:.3rem 0 0">' + esc(it.ex) + '</p>' : '') + '</div>' +
-      (it.n && EXP[it.n.id] && EXP[it.n.id][1] ? '<div class="exbox small"><span class="elab">Exemple</span><p>' + esc(EXP[it.n.id][1]) + '</p></div>' : '') : '') +
+      ((it.full && it.full !== it.ex) || (it.n && EXP[it.n.id] && EXP[it.n.id][1]) ? '<details class="small" style="margin-top:.5rem"><summary>Plus d\'explications</summary>' + (it.full && it.full !== it.ex ? '<p>' + esc(it.full) + '</p>' : '') +
+        (it.n && EXP[it.n.id] && EXP[it.n.id][1] ? '<div class="exbox small"><span class="elab">Exemple</span><p>' + esc(EXP[it.n.id][1]) + '</p></div>' : '') + '</details>' : '') : '') +
     (!q ? '<div class="row" style="justify-content:flex-end;margin-top:1rem"><button class="btn big" data-a="khnext" id="khnext">' + (kh.i + 1 < kh.items.length ? 'Question suivante' : 'Voir mon score') + '</button></div>' : '') + '</div>';
 };
 
@@ -2281,8 +2282,8 @@ function deckLabel(arg) {
   var p = String(arg).split('.'); return MATIERES[p[0]][0] + (p.length > 1 ? ' › ' + themesOf(p[0])[+p[1]] : '');
 }
 function deckStats(L) {
-  var now = Date.now(), s = { total: L.length, nouv: 0, revoir: 0, maitr: 0 };
-  L.forEach(function (n) { var c = S.cards[n.id]; if (S.learned[n.id]) s.maitr++; else if (!c) s.nouv++; else if (c.d <= now) s.revoir++; else if (c.s >= 21) s.maitr++; });
+  var now = Date.now(), s = { total: L.length, nouv: 0, revoir: 0, cours: 0, maitr: 0 };   // cours = déjà vue, pas encore à revoir (sinon elle n'était comptée nulle part)
+  L.forEach(function (n) { var c = S.cards[n.id]; if (S.learned[n.id]) s.maitr++; else if (!c) s.nouv++; else if (c.d <= now) s.revoir++; else if (c.s >= 21) s.maitr++; else s.cours++; });
   return s;
 }
 function deckDue(L) {   // à revoir d'abord, puis nouvelles, par importance
@@ -2291,7 +2292,7 @@ function deckDue(L) {   // à revoir d'abord, puis nouvelles, par importance
     .sort(function (a, b) { return (S.cards[b.id] ? 1 : 0) - (S.cards[a.id] ? 1 : 0) || b.imp - a.imp; });
 }
 function deckBadges(s) {
-  return '<span class="dk"><i class="b-rev" title="À revoir aujourd\'hui">' + s.revoir + '</i><i class="b-new" title="Nouvelles">' + s.nouv + '</i><i class="b-ok" title="Maîtrisées">' + s.maitr + '</i></span>';
+  return '<span class="dk"><i class="b-rev" title="À revoir aujourd\'hui">' + s.revoir + '</i><i class="b-new" title="Nouvelles">' + s.nouv + '</i><i class="b-cours" title="En cours : déjà vues, à revoir plus tard">' + s.cours + '</i><i class="b-ok" title="Maîtrisées">' + s.maitr + '</i></span>';
 }
 function deckRow(arg, titre, s, extra) {
   var a = s.revoir + s.nouv;
@@ -2300,7 +2301,7 @@ function deckRow(arg, titre, s, extra) {
 }
 function flashDecks() {
   var all = deckStats(flashNotions()), err = carteErreurs().length;
-  return pageHead('Flashcards', 'Tes cartes sont rangées comme dans Anki : épreuve › matière › grand thème. Réviser une matière révise tous ses thèmes. Dans chaque paquet : <b class="t-rev">à revoir</b> aujourd\'hui, <b class="t-new">nouvelles</b>, <b class="t-ok">maîtrisées</b>.') +
+  return pageHead('Flashcards', 'Tes cartes sont rangées comme dans Anki : épreuve › matière › grand thème. Réviser une matière révise tous ses thèmes. Dans chaque paquet : <b class="t-rev">à revoir</b> aujourd\'hui, <b class="t-new">nouvelles</b>, en cours (déjà vues, à revoir plus tard), <b class="t-ok">maîtrisées</b>.') +
     '<div class="decktop"><a class="card tile big" href="#flash/deck/all"><b>Tout réviser (mélangé)</b><span>' + (all.revoir + all.nouv) + ' cartes à voir aujourd\'hui, toutes matières alternées : la meilleure option au quotidien.</span></a>' +
       '<a class="card tile" href="#flash/express"><b>Révision express</b><span>5 cartes, pour 2 minutes</span></a>' +
       '<a class="card tile" href="#flash/erreurs"><b>Mes erreurs</b><span>' + err + ' carte(s) ratée(s) à retravailler</span></a></div>' +

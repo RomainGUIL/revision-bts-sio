@@ -12,7 +12,17 @@ window.FLASH_HORS = {
   'e6d-epreuve': 'Organisation de l\'épreuve : à lire une fois, rappelée par la convocation.',
   'labs': 'Conseil pratique, pas une connaissance d\'examen.',
   'cge-refs': 'Conseil de méthode : à appliquer en préparant ses exemples, pas à réciter.',
-  'cge-langue': 'Conseil de méthode : à appliquer à la relecture, pas à réciter.'
+  'cge-langue': 'Conseil de méthode : à appliquer à la relecture, pas à réciter.',
+  'cge-synthese': 'Méthode de réponse : à appliquer sur un corpus (page « Méthode »), pas à réciter.',
+  'cge-regles': 'Méthode de réponse : à appliquer sur un corpus (page « Méthode »), pas à réciter.',
+  'cge-intro': "Méthode d'analyse d'image : à appliquer, pas à réciter.",
+  'cge-ecriture': "Méthode de l'essai : à appliquer en s'entraînant (page « Méthode »).",
+  'cge-biblio': 'Liste de lectures : à consulter pour trouver des exemples, pas à apprendre par cœur.',
+  'ang-cr': "Méthode du compte rendu : à appliquer en s'entraînant (page « Méthode »).",
+  'ang-oral': "Méthode de l'oral : à appliquer en s'entraînant (simulateur d'oral).",
+  'py-trace': 'Méthode : à pratiquer sur des programmes (page « Maths et Python »), pas à réciter.',
+  'anssi': "Culture générale sur les organismes : presque jamais notée à l'examen.",
+  'red-blue': "Vocabulaire de culture générale : presque jamais noté à l'examen (reste dans les flashcards pentest)."
 };
 window.FLASH_SIMPLE = {
   // E7 Cybersécurité — tronc commun
@@ -175,6 +185,10 @@ window.FLASH_SIMPLE = {
   'e5-itil': 'Incident : panne à réparer vite. Problème : sa cause profonde. Demande : besoin d\'un utilisateur. Changement : modification planifiée.',
   'e5-projet': 'Cahier des charges, découpage en tâches, Gantt ; en agile (Scrum) : sprints courts, backlog et point quotidien.',
   'e5-veille': 'Choisir un sujet précis, montrer ses outils (RSS, alertes), sa méthode et ce qu\'on en a retiré, avec des sources datées.',
+  "e5-ticket": "Enregistrer, qualifier (priorité = impact × urgence), diagnostiquer, résoudre ou escalader, puis clôturer avec l'utilisateur et documenter.",
+  "e5-sla": "Engagement écrit : délais de prise en charge et de résolution, disponibilité garantie, indicateurs et pénalités.",
+  "e5-service": "Tester (recette), déployer d'abord sur un groupe pilote, documenter, puis former et accompagner les utilisateurs.",
+  "e5-presence": "Site conforme et à jour, bon référencement, réseaux sociaux adaptés, charte graphique et suivi de l'e-réputation.",
   // E6 SISR
   'e6s-ip': 'Bits d\'hôtes = 32 − masque ; nombre d\'hôtes = 2^bits − 2 (un /26 → 6 bits → 62 hôtes, masque 255.255.255.192).',
   'e6s-services': 'DNS : traduit un nom en adresse IP. DHCP : donne automatiquement une adresse IP, un masque, une passerelle et un DNS.',
