@@ -397,7 +397,7 @@ var NAV = [
   ['Réviser', [['seance', 'Séance guidée'], ['erreurs', 'Carnet d\'erreurs'], ['controles', 'Mes contrôles']]],
   ['S\'entraîner', [['examen', 'Examen blanc'], ['oral', 'Simulateur d\'oral'], ['realisations', 'Mes réalisations (E5/E6)'], ['chrono', 'Quiz chrono (QCM)'], ['quiz', 'Mes quiz'], ['exos', 'Exercices'], ['ecoute', 'Écouter en anglais']]],
   ['Cours et fiches', [['biblio', 'Bibliothèque de notions'], ['pentest', 'Tests d\'intrusion (pentest)'], ['python', 'Maths et Python (E3)'], ['erreursfreq', 'Pièges fréquents'], ['glossaire', 'Glossaire des sigles'], ['fiches', 'Fiches à imprimer'], ['methode', 'Méthode de rédaction']]],
-  ['Annales et ressources', [['annales', 'Sujets et corrections'], ['pronos', 'Thèmes à réviser'], ['tp', 'TP SISR'], ['relecture', 'Relire les corrections'], ['horsligne', 'Préparer le hors-ligne']]],
+  ['Annales et ressources', [['annales', 'Sujets et corrections'], ['pronos', 'Thèmes à réviser'], ['tp', 'TP SISR et SLAM'], ['relecture', 'Relire les corrections'], ['horsligne', 'Préparer le hors-ligne']]],
   ['Organisation', [['planning', 'Mon planning'], ['notes', 'Mes notes'], ['suivi', 'Réglages et sauvegarde'], ['mentions', 'Mentions légales']]]
 ];
 /* Menu repliable (divulgation progressive) : seul le groupe de la page en cours est ouvert, les autres se déplient au clic. */
@@ -651,9 +651,11 @@ V.biblio = function (mode, arg) {
       var gs = GLOSSAIRE.filter(function (g) { return norm(g[0] + ' ' + g[1]).indexOf(qn) >= 0; }).slice(0, 6);
       var qs = mesQuestions().filter(function (q) { return norm(q.texte).indexOf(qn) >= 0; }).slice(0, 6);
       var tps = S.option === 'SLAM' ? [] : TP_SISR.filter(function (x) { return norm(x[3] + ' ' + x[7]).indexOf(qn) >= 0; }).slice(0, 4);
+      var tpl = S.option === 'SISR' ? [] : TP_SLAM.filter(function (x) { return norm(x[3] + ' ' + x[6] + ' ' + x[8]).indexOf(qn) >= 0; }).slice(0, 4);
       autres = (gs.length ? '<h3>Sigles</h3><div class="gl">' + glossList(gs) + '</div>' : '') +
         (qs.length ? '<h3>Questions d\'examen et d\'entraînement</h3><div class="card">' + qs.map(function (q) { return '<p class="small"><a href="#annales/' + q.sujet + '">' + esc(sujetLabel(SUJETS[q.sujet])) + ', ' + esc(q.num) + '</a> — ' + esc(q.texte.slice(0, 180)) + (q.texte.length > 180 ? '…' : '') + '</p>'; }).join('') + '</div>' : '') +
         (tps.length ? '<h3>TP SISR</h3><div class="card">' + tps.map(function (x) { return '<p class="small"><a target="_blank" rel="noopener" href="' + TP_SOURCES[x[1]].repo + '/blob/main/docs/' + x[4] + '/README.md">' + esc(x[3]) + '</a></p>'; }).join('') + '</div>' : '') +
+        (tpl.length ? '<h3>TP SLAM</h3><div class="card">' + tpl.map(function (x) { return '<p class="small"><button class="btn ghost small" data-a="tpslam">' + esc(x[3]) + '</button></p>'; }).join('') + '</div>' : '') +
         (res.length ? '<h3>Notions</h3>' : '');
     }
     if (autres) return head + '<div class="row" style="margin-bottom:1rem"><span class="tag acc">Recherche : ' + esc(f.q) + '</span><button class="btn ghost small" data-a="clearsearch">Effacer la recherche</button></div>' + autres + (res.length ? notionsParMatiere(res, false) : '');
@@ -953,16 +955,39 @@ V.notes = function () {
     '<p class="small muted">Les notes des études de cas sont celles que tu as retenues (note automatique ajustée). Une question qui touche plusieurs matières compte pour chacune.</p>';
 };
 
-/* — TP SISR — */
+/* — TP SISR (cours publics, data/tp_sisr.js) et TP SLAM (écrits pour l'application, data/tp_slam.js) — */
+function tpTabs(opt) {   // onglets SISR / SLAM, seulement si aucune option n'est choisie
+  return S.option ? '' : '<div class="chips">' + ['SISR', 'SLAM'].map(function (o) { return '<button class="chip' + (opt === o ? ' on' : '') + '" data-a="tpf" data-k="opt" data-v="' + o + '">TP ' + o + '</button>'; }).join('') + '</div>';
+}
+function tpSlam(f) {
+  var list = TP_SLAM.filter(function (t) { return (!f.imp || t[4] === +f.imp) && (!f.an || t[1] === +f.an); })
+    .sort(function (a, b) { return b[4] - a[4] || a[2].localeCompare(b[2]); });
+  var faits = TP_SLAM.filter(function (t) { return S.tpdone[t[0]]; }).length;
+  var chip = function (k, v, l) { return '<button class="chip' + (f[k] === v ? ' on' : '') + '" data-a="tpf" data-k="' + k + '" data-v="' + v + '">' + l + '</button>'; };
+  var LBL = { 3: 'Indispensable', 2: 'Utile', 1: 'Complément' };
+  return '<h1>TP SLAM</h1><p class="lead">' + TP_SLAM.length + ' TP du bloc 2 SLAM et de l\'E7 SLAM, à faire sur ton poste avec des outils gratuits. Ils ont été écrits pour l\'application (ce ne sont pas des sujets officiels) et se suivent : la base du premier TP sert aux suivants. <b>Indispensable</b> = revient souvent à l\'E6 ou à l\'E7.</p>' + tpTabs('SLAM') +
+    '<div class="row" style="margin-bottom:1rem"><div class="bar" style="flex:1;max-width:320px"><i style="width:' + (faits / TP_SLAM.length * 100) + '%"></i></div><span class="small muted">' + faits + ' TP faits sur ' + TP_SLAM.length + '</span></div>' +
+    '<div class="chips">' + chip('imp', '', 'Tous') + chip('imp', '3', 'Indispensables') + chip('imp', '2', 'Utiles') + chip('imp', '1', 'Compléments') + '</div>' +
+    '<div class="chips sub">' + chip('an', '', 'Les deux années') + chip('an', '2', '2e année') + chip('an', '1', '1re année') + '</div>' +
+    (list.length ? '' : '<div class="card"><p class="muted">Aucun TP pour ce filtre.</p></div>') +
+    '<div class="cols">' + list.map(function (t) {
+      var done = S.tpdone[t[0]];
+      return '<div class="card notion tp' + (done ? ' done' : '') + '"><h4>' + esc(t[3]) + '</h4><div class="row tags"><span class="tag i' + t[4] + '">' + LBL[t[4]] + '</span><span class="tag">' + t[1] + (t[1] === 1 ? 're' : 'e') + ' année · ' + t[2] + '</span>' + t[5].split(' ').map(function (e) { return '<span class="tag acc">' + e + '</span>'; }).join('') + '</div>' +
+        '<p class="small">' + esc(t[6]) + '</p><details><summary>Voir le TP</summary><p><b>Objectif :</b> ' + esc(t[8]) + '</p><ol>' + t[9].map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ol><p class="small"><b>À savoir montrer :</b> ' + esc(t[10]) + '</p></details>' +
+        '<div class="row"><button class="btn ghost small' + (done ? ' on' : '') + '" data-a="tpdone" data-id="' + t[0] + '">' + (done ? 'Fait ✓' : 'Marquer comme fait') + '</button>' +
+        t[7].split(' ').filter(function (x) { return THEMES[x]; }).slice(0, 2).map(function (x) { return '<button class="btn ghost small" data-a="gotheme" data-v="' + x + '" title="Notions liées">' + esc(THEMES[x][0]) + '</button>'; }).join('') + '</div></div>';
+    }).join('') + '</div>' +
+    '<h2>Autres sites utiles en SLAM</h2><div class="card"><ul>' + TP_AUTRES_SLAM.map(function (a) { return '<li><a target="_blank" rel="noopener" href="' + a[1] + '">' + esc(a[0]) + '</a> — <span class="small">' + esc(a[2]) + '</span></li>'; }).join('') + '</ul></div>';
+}
 V.tp = function () {
-  if (S.option === 'SLAM') return '<h1>TP SISR</h1><div class="card"><p>Cette rubrique concerne l\'option SISR. Tu as choisi SLAM : change d\'option en haut de la page pour l\'afficher.</p></div>';
-  var f = V.tp.f = V.tp.f || { imp: '', an: '' };
+  var f = V.tp.f = V.tp.f || { imp: '', an: '', opt: 'SISR' };
+  if ((S.option || f.opt) === 'SLAM') return tpSlam(f);
   var list = TP_SISR.filter(function (t) { return (!f.imp || t[5] === +f.imp) && (!f.an || t[1] === +f.an); })
     .sort(function (a, b) { return b[5] - a[5] || b[1] - a[1] || a[2].localeCompare(b[2]); });
   var faits = TP_SISR.filter(function (t) { return S.tpdone[t[0]]; }).length;
   var chip = function (k, v, l) { return '<button class="chip' + (f[k] === v ? ' on' : '') + '" data-a="tpf" data-k="' + k + '" data-v="' + v + '">' + l + '</button>'; };
   var LBL = { 3: 'Indispensable', 2: 'Utile', 1: 'Complément' };
-  return '<h1>TP SISR</h1><p class="lead">' + TP_SISR.length + ' TP du bloc 2 SISR (1re et 2e année), classés du plus utile au moins utile pour l\'examen. Ils viennent des cours publics d\'un formateur BTS SIO, gratuits et complets (consignes, explications, bilan de compétences). Le classement est un avis pour réviser : <b>Indispensable</b> = revient souvent à l\'E6 ou à l\'E7.</p>' +
+  return '<h1>TP SISR</h1><p class="lead">' + TP_SISR.length + ' TP du bloc 2 SISR (1re et 2e année), classés du plus utile au moins utile pour l\'examen. Ils viennent des cours publics d\'un formateur BTS SIO, gratuits et complets (consignes, explications, bilan de compétences). Le classement est un avis pour réviser : <b>Indispensable</b> = revient souvent à l\'E6 ou à l\'E7.</p>' + tpTabs('SISR') +
     '<div class="row" style="margin-bottom:1rem"><div class="bar" style="flex:1;max-width:320px"><i style="width:' + (faits / TP_SISR.length * 100) + '%"></i></div><span class="small muted">' + faits + ' TP faits sur ' + TP_SISR.length + '</span></div>' +
     '<div class="chips">' + chip('imp', '', 'Tous') + chip('imp', '3', 'Indispensables') + chip('imp', '2', 'Utiles') + chip('imp', '1', 'Compléments') + '</div>' +
     '<div class="chips sub">' + chip('an', '', 'Les deux années') + chip('an', '2', '2e année') + chip('an', '1', '1re année') + '</div>' +
@@ -1498,6 +1523,17 @@ var EXOS = {
     var o = [rnd(4, 7), rnd(0, 7), rnd(0, 7)], sym = o.map(function (d) { return (d & 4 ? 'r' : '-') + (d & 2 ? 'w' : '-') + (d & 1 ? 'x' : '-'); }).join('');
     if (rnd(0, 1)) return { titre: 'Notation symbolique vers octale', enonce: 'Un fichier a les droits <b>' + sym + '</b>. Quelle commande chmod en octal ?', champs: [['Valeur octale (ex. 750)', o.join(''), nNum]], corr: 'r = 4, w = 2, x = 1, par groupe (propriétaire, groupe, autres) : ' + o.join(' / ') + ' → chmod ' + o.join('') + '.' };
     return { titre: 'Notation octale vers symbolique', enonce: 'Quels droits donne <b>chmod ' + o.join('') + '</b> ?', champs: [['Notation symbolique (ex. rwxr-x---)', sym, nTxt]], corr: o.map(function (d) { return d + ' = ' + (d & 4 ? 'r' : '-') + (d & 2 ? 'w' : '-') + (d & 1 ? 'x' : '-'); }).join(' ; ') + '.' };
+  } },
+  sql: { nom: 'Résultat d\'une requête SQL', mats: ['e6slam', 'slam'], gen: function () {   // pendant SLAM des exercices réseau : lire une requête et calculer son résultat
+    var noms = shuffle(['Clavier', 'Souris', 'Écran', 'Casque', 'Webcam', 'Câble', 'Disque', 'Routeur']).slice(0, 6), cats = ['Bureau', 'Réseau', 'Son'];
+    var rows = noms.map(function (n, i) { return { id: i + 1, nom: n, cat: cats[rnd(0, 2)], prix: rnd(1, 30) * 5, stock: rnd(0, 12) }; });
+    var seuil = rows[rnd(0, 5)].prix, c = rows[rnd(0, 5)].cat, k = rnd(0, 2), req, val, expl;
+    var sel = function (f) { return rows.filter(f); };
+    if (k === 0) { var a = sel(function (r) { return r.prix > seuil; }); req = 'SELECT COUNT(*) FROM produit WHERE prix > ' + seuil + ';'; val = a.length; expl = 'Lignes dont le prix dépasse strictement ' + seuil + ' : ' + (a.map(function (r) { return r.nom; }).join(', ') || 'aucune') + ' → ' + val + '. Attention : « > » exclut la valeur ' + seuil + ' elle-même.'; }
+    else if (k === 1) { var b = sel(function (r) { return r.cat === c; }); req = 'SELECT SUM(stock) FROM produit WHERE categorie = \'' + c + '\';'; val = b.reduce(function (t, r) { return t + r.stock; }, 0); expl = 'Produits de la catégorie ' + c + ' : ' + b.map(function (r) { return r.nom + ' (' + r.stock + ')'; }).join(' + ') + ' = ' + val + '.'; }
+    else { var d = sel(function (r) { return r.stock > 0; }); req = 'SELECT MAX(prix) FROM produit WHERE stock > 0;'; val = d.length ? Math.max.apply(null, d.map(function (r) { return r.prix; })) : 'NULL'; expl = 'On garde les produits en stock (' + d.map(function (r) { return r.nom; }).join(', ') + '), puis le plus grand prix : ' + val + '.'; }
+    var table = '<table class="small"><tr><th>id</th><th>nom</th><th>categorie</th><th>prix</th><th>stock</th></tr>' + rows.map(function (r) { return '<tr><td>' + r.id + '</td><td>' + r.nom + '</td><td>' + r.cat + '</td><td>' + r.prix + '</td><td>' + r.stock + '</td></tr>'; }).join('') + '</table>';
+    return { titre: 'Requête SQL', enonce: 'Table <b>produit</b> :' + table + 'Que renvoie <code>' + req + '</code> ?', champs: [['Résultat (un nombre, ou NULL)', String(val), nNum]], corr: expl };
   } }
 };
 var exo = null;   // { type, x: exercice généré, reps, fini }
@@ -1506,7 +1542,7 @@ V.exos = function () {
   var types = exoTypes(); if (!exo || types.indexOf(exo.type) < 0) exo = { type: types[0] };
   if (!exo.x) { exo.x = EXOS[exo.type].gen(); exo.reps = []; exo.fini = false; }
   var x = exo.x, st = (S.exstats || {})[exo.type];
-  return pageHead('Exercices', 'Des exercices générés à l\'infini et corrigés tout de suite : sous-réseaux, masques, conversions, droits Linux. Indispensables pour l\'E6 SISR, l\'E3 et les questions réseau de l\'E7.') +
+  return pageHead('Exercices', 'Des exercices générés à l\'infini et corrigés tout de suite : sous-réseaux, masques, conversions, droits Linux (SISR) et requêtes SQL (SLAM). Indispensables pour l\'E6, l\'E3 et les questions techniques de l\'E7.') +
     '<div class="chips">' + types.map(function (k) { var s = (S.exstats || {})[k]; return '<button class="chip' + (k === exo.type ? ' on' : '') + '" data-a="xtype" data-v="' + k + '">' + EXOS[k].nom + (s ? ' <i>' + Math.round(s.ok / s.n * 100) + ' %</i>' : '') + '</button>'; }).join('') + '</div>' +
     '<div class="card exo"><p class="small muted">' + esc(x.titre) + (st ? ' · ' + st.ok + ' réussi(s) sur ' + st.n : '') + '</p><p class="qtext">' + x.enonce + '</p><div class="exf">' +
     x.champs.map(function (c, i) {
@@ -1544,7 +1580,7 @@ function qcmBuild(src) {
       return { q: 'Que signifie « ' + g[0] + ' » ?', ok: g[1], opts: shuffle([g[1]].concat(faux)), ex: g[2], niv: x.niv };
     });
   } else {
-    var pool = flashNotions().filter(function (n) { return MATIERES[n.mat][2] === src && window.QCM && QCM[n.id]; });
+    var pool = /-/.test(src) ? khOptPool(src) : flashNotions().filter(function (n) { return MATIERES[n.mat][2] === src && window.QCM && QCM[n.id]; });
     items = tirageProgressif(pool.map(function (n) { return { n: n, niv: QCM[n.id][0] }; }), 10).map(function (x) {
       var Q = QCM[x.n.id];
       return { q: Q[1], ok: Q[2], opts: shuffle(Q.slice(2, 6)), ex: x.n.a, niv: Q[0], n: x.n };   // explication = la fiche complète de la notion
@@ -1557,9 +1593,22 @@ function qcmBuild(src) {
 /* — Quiz chrono (façon Kahoot) : QCM contre la montre, points selon la rapidité, bonus de série.
    kh = { key, src, arg, lim (secondes), phase: 'ready' | 'q' (on répond) | 'r' (réponse affichée) | 'end', items, i, t0, rep, score, ok, streak, gain } */
 var kh = null;
+var KH_OPTS = ['SISR', 'SLAM'];
+/* Questions d'une épreuve pour une seule option (clé « E7-SLAM ») : tronc commun + notions de cette option, même si l'autre option est choisie en haut de la page. */
+function khOptPool(k) {
+  var m = /^(E\d)-(SISR|SLAM)$/.exec(k);
+  if (!m || !window.QCM) return [];
+  var spec = NOT.filter(function (n) { return MATIERES[n.mat][2] === m[1] && MATIERES[n.mat][3] === m[2]; });
+  if (!spec.length) return [];   // épreuve sans partie propre à l'option : pas de quiz séparé
+  return NOT.filter(function (n) { var M = MATIERES[n.mat]; return M[2] === m[1] && (!M[3] || M[3] === m[2]) && !horsFlash(n.id) && QCM[n.id]; });
+}
 var KH_COL = ['kr', 'kb', 'ky', 'kg'];
 function khSources() {
-  var eps = Object.keys(EPREUVES).filter(function (e) { return matsOf(e).length; }).map(function (e) { return [e, EP_COURT[e]]; });
+  var eps = [];
+  Object.keys(EPREUVES).forEach(function (e) {
+    if (matsOf(e).length) eps.push([e, EP_COURT[e]]);
+    KH_OPTS.forEach(function (o) { if (khOptPool(e + '-' + o).length >= 4) eps.push([e + '-' + o, EP_COURT[e] + ' · ' + o]); });   // quiz propres à une option (SISR ou SLAM)
+  });
   return (S.quiz || []).filter(function (z) { return z.qs.some(quizPlayable); }).map(function (z) { return ['quiz/' + z.id, 'Quiz : ' + (z.titre || 'sans titre')]; }).concat(eps, [['sigles', 'Sigles']], (S.ctrl || []).filter(function (c) { return ctrlCards(c).length >= 4; }).map(function (c) { return ['ctrl/' + c.id, 'Contrôle : ' + c.titre]; }));
 }
 function khItems(k) {
@@ -1589,14 +1638,14 @@ V.chrono = function (src, arg) {
   if (kh.phase === 'ready') return head + chips + '<div class="card kready"><p class="kbig">Prêt ?</p><p class="muted">' + esc(L.filter(function (x) { return x[0] === kh.key; })[0][1]) + (best ? ' · ton record : <b>' + best + ' points</b>' : '') + '</p>' +
     '<div class="row" style="justify-content:center"><label class="small muted">Temps par question <select id="khLim">' + KH_LIMS.concat([[0, 'Sans chrono']]).map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === kh.lim ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label><button class="btn big" data-a="khstart">C\'est parti !</button></div></div>';
   if (kh.phase === 'end') {
-    var n = kh.items.length, record = kh.record;
-    return head + chips + '<div class="card kready"><p class="small muted">Score final</p><p class="kbig">' + (kh.lim ? kh.score + ' points' : kh.ok + ' / ' + n) + '</p><p><b>' + kh.ok + ' / ' + n + '</b> bonnes réponses · meilleure série : ' + kh.maxStreak + (kh.lim ? '' : ' · sans chrono') + '</p>' +
+    var n = kh.abandon ? kh.joue : kh.items.length, record = kh.record;
+    return head + chips + '<div class="card kready"><p class="small muted">' + (kh.abandon ? 'Partie abandonnée après ' + n + ' question' + (n > 1 ? 's' : '') + ' sur ' + kh.items.length + ' (pas de record)' : 'Score final') + '</p><p class="kbig">' + (kh.lim ? kh.score + ' points' : kh.ok + ' / ' + n) + '</p><p><b>' + kh.ok + ' / ' + n + '</b> bonnes réponses · meilleure série : ' + kh.maxStreak + (kh.lim ? '' : ' · sans chrono') + '</p>' +
       (record ? '<p class="tag good">Nouveau record !</p>' : best ? '<p class="small muted">Ton record : ' + best + ' points</p>' : '') +
       (kh.ok < n ? '<p class="small muted">Les questions ratées sont ajoutées à ton carnet d\'erreurs.</p>' : '') +
-      '<div class="row" style="justify-content:center"><button class="btn big" data-a="khstart">Rejouer</button></div></div>';
+      '<div class="row" style="justify-content:center"><button class="btn big" data-a="khstart">Rejouer</button><button class="btn ghost" data-a="khmenu">Changer de quiz</button></div></div>';
   }
   var it = kh.items[kh.i], q = kh.phase === 'q', r = q ? khReste() : 0;
-  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (kh.i + 1) + ' / ' + kh.items.length + ' ' + nivTag(it) + '</span><span class="kscore">' + kh.score + ' pts' + (kh.streak > 1 ? ' · série ' + kh.streak : '') + '</span></div>' +
+  return head + '<div class="kgame"><div class="row sp fmeta"><span class="small muted">Question ' + (kh.i + 1) + ' / ' + kh.items.length + ' ' + nivTag(it) + '</span><span class="kscore">' + kh.score + ' pts' + (kh.streak > 1 ? ' · série ' + kh.streak : '') + '</span><button class="btn ghost small" data-a="khquit" title="Arrêter la partie et voir le score">Abandonner</button></div>' +
     (kh.lim ? '<div class="kbar"><i' + (q ? ' style="animation-duration:' + qLim(kh) * 1000 + 'ms;animation-delay:' + (r - qLim(kh) * 1000) + 'ms"' : ' style="width:0"') + '></i></div>'
       : '<div class="bar" style="margin:.3rem 0 .9rem"><i style="width:' + (kh.i + (q ? 0 : 1)) / kh.items.length * 100 + '%"></i></div>') +
     '<div class="card kq' + (kh.lim ? '' : ' free') + '"><p class="qtext">' + esc(it.q) + '</p>' + (q && kh.lim ? '<span class="knum" id="khnum">' + Math.ceil(r / 1000) + '</span>' : '') + '</div>' +
@@ -2480,7 +2529,7 @@ var ACT = {
     var st = (S.exstats = S.exstats || {})[exo.type] = S.exstats[exo.type] || { ok: 0, n: 0 }; st.n++; if (ok) st.ok++;
     exo.fini = true; dayCount('ex'); save(); rerender(); toast(ok ? 'Tout est juste, bravo !' : 'Regarde les corrections en rouge et l\'explication.');
   },
-  khstart: function () { var l = $('#khLim'); if (l) kh.lim = +l.value; Object.assign(kh, { items: khItems(kh.key), i: 0, score: 0, ok: 0, streak: 0, maxStreak: 0, record: false, phase: 'q', t0: Date.now() });
+  khstart: function () { var l = $('#khLim'); if (l) kh.lim = +l.value; Object.assign(kh, { items: khItems(kh.key), i: 0, score: 0, ok: 0, streak: 0, maxStreak: 0, record: false, abandon: false, joue: 0, phase: 'q', t0: Date.now() });
     if (!kh.items.length) { kh.phase = 'ready'; toast('Pas assez de questions pour ce choix.'); } rerender(); },
   khrep: function (el) {
     if (!kh || kh.phase !== 'q') return;
@@ -2530,6 +2579,13 @@ var ACT = {
     V.rejoindre.pseudo = name; mpJoin(code, name); rerender();
   },
   mpa: function (el) { mpChoose(+el.dataset.v); },
+  khquit: function () {   // abandon : on garde les réponses déjà données, sans record
+    if (!kh || (kh.phase !== 'q' && kh.phase !== 'r')) return;
+    if (!confirm('Abandonner la partie ? Les réponses déjà données sont gardées, mais le score ne compte pas comme record.')) return;
+    kh.joue = kh.i + (kh.phase === 'r' ? 1 : 0); kh.abandon = true; kh.record = false; kh.phase = 'end'; rerender();
+  },
+  khmenu: function () { kh = null; go('#chrono'); },
+  tpslam: function () { V.tp.f = V.tp.f || { imp: '', an: '' }; V.tp.f.opt = 'SLAM'; if (location.hash === '#tp') rerender(); else go('#tp'); },
   khnext: function () {
     if (!kh || kh.phase !== 'r') return;
     if (++kh.i < kh.items.length) { kh.phase = 'q'; kh.t0 = Date.now(); rerender(); return; }
