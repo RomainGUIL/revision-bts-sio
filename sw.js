@@ -7,7 +7,7 @@ var ASSETS = 'bts-sio-assets:' + self.registration.scope;
 var FILES = ['./', 'index.html', 'css/style.css', 'js/app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/favicon.ico', 'icons/icon-32.png', 'icons/apple-touch-icon.png',
   'data/questions.js', 'data/anciens.js', 'data/corrections.js', 'data/docs_questions.js', 'data/notions.js', 'data/explications.js', 'data/entrainement.js', 'data/entrainement_plus.js',
   'data/tp_sisr.js', 'data/tp_slam.js', 'data/tp_certa.js', 'data/oral.js', 'data/methode.js', 'data/glossaire.js', 'data/schemas.js', 'data/erreurs.js', 'data/python.js', 'data/pentest.js', 'data/media.js', 'data/qcm.js', 'data/flash.js', 'js/study.js', 'js/config.js', 'css/study.css',
-  'data/videos.js', 'data/francais.js', 'data/ateliers.js', 'data/oral_cartes.js', 'js/plus.js', 'js/ateliers.js', 'js/jeux.js'];
+  'data/videos.js', 'data/schemas_plus.js', 'data/francais.js', 'data/ateliers.js', 'data/oral_cartes.js', 'js/plus.js', 'js/ateliers.js', 'js/jeux.js'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) { return Promise.all(keys.filter(function (k) { return k.indexOf(PREFIX) === 0 && k !== VERSION; }).map(async function (k) {
