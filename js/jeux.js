@@ -84,7 +84,7 @@
   function verifierBadges() {
     var j = P(), neufs = badgesEtat().filter(function (x) { return x.ok && !j.badges[x.b[0]]; });
     neufs.forEach(function (x) { j.badges[x.b[0]] = Date.now(); });
-    if (neufs.length) { E.save(); E.toast('Nouveau badge : ' + neufs.map(function (x) { return x.b[1] + ' ' + x.b[2]; }).join(', ') + ' !'); confettis(); }
+    if (neufs.length) { E.save(); E.toast('Nouveau badge : ' + neufs.map(function (x) { return x.b[1] + ' ' + x.b[2]; }).join(', ') + ' !'); setTimeout(confettis, 0); }
   }
 
   /* ───── Défis du jour : toujours des flashcards + deux défis tirés selon la date ───── */
@@ -101,7 +101,7 @@
   function dayStr() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
   function verifierDefis() {
     var j = P(), L = defis(), d = today();
-    if (L.every(function (q) { return q.ok; }) && !j.defis[d]) { j.defis[d] = 1; E.save(); E.toast('Les 3 défis du jour sont relevés, bravo ! +30 points'); confettis(); }
+    if (L.every(function (q) { return q.ok; }) && !j.defis[d]) { j.defis[d] = 1; E.save(); E.toast('Les 3 défis du jour sont relevés, bravo ! +30 points'); setTimeout(confettis, 0); }
   }
   function quest(k, n) {
     var j = P(), d = today(); if (j.jour.d !== d) j.jour = { d: d, c: {} };
@@ -113,6 +113,7 @@
   /* ───── Confettis (désactivés si l'élève a demandé moins d'animations) ───── */
   function confettis() {
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!document.body || !document.body.appendChild) return;
     var c = document.createElement('div'); c.className = 'confetti'; c.setAttribute('aria-hidden', 'true');
     var cols = ['#1d4ed8', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4'];
     for (var i = 0; i < 70; i++) { var s = document.createElement('i'); s.style.left = Math.random() * 100 + '%'; s.style.background = cols[i % cols.length]; s.style.animationDelay = Math.random() * .6 + 's'; s.style.animationDuration = 1.8 + Math.random() * 1.4 + 's'; s.style.transform = 'rotate(' + Math.random() * 360 + 'deg)'; c.appendChild(s); }
@@ -223,7 +224,7 @@
   };
   function bip() { try { var C = window.AudioContext || window.webkitAudioContext; if (!C) return; var c = new C(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 880; g.gain.value = .08; o.connect(g); g.connect(c.destination); o.start(); setTimeout(function () { o.stop(); c.close(); }, 350); } catch (e) {} }
   ACT.pmmode = function (el) { V.minuteur.m = +el.dataset.v; E.rerender(); };
-  ACT.pmgo = function () { var m = V.minuteur.m || 0; pm = { m: m, phase: 'travail', fin: Date.now() + MODES[m][0] * 60000, pause: false }; E.rerender(); pill(); };
+  ACT.pmgo = function () { var m = V.minuteur.m || 0; pm = { m: m, phase: 'travail', fin: Date.now() + MODES[m][0] * 60000, pause: false }; pmTick(); E.rerender(); pill(); };
   ACT.pmpause = function () { if (!pm) return; if (pm.pause) { pm.fin = Date.now() + pm.rest; pm.pause = false; } else { pm.rest = pm.fin - Date.now(); pm.pause = true; } E.rerender(); };
   ACT.pmstop = function () { pm = null; E.rerender(); pill(); };
   function pill() {
@@ -232,15 +233,19 @@
     if (!el) { el = document.createElement('a'); el.id = 'pomopill'; el.href = '#minuteur'; document.body.appendChild(el); }
     el.textContent = (pm.phase === 'travail' ? '⏱ Travail ' : '☕ Pause ') + mmss(pm.pause ? pm.rest : pm.fin - Date.now());
   }
-  setInterval(function () {
-    if (!pm || pm.pause) return;
+  /* Le minuteur ne tourne que pendant une session (pas de tâche de fond inutile). */
+  var pmTimer = null;
+  function pmTick() { if (!pmTimer) pmTimer = setInterval(pmStep, 1000); }
+  function pmStep() {
+    if (!pm) { clearInterval(pmTimer); pmTimer = null; return; }
+    if (pm.pause) return;
     var r = pm.fin - Date.now(), t = document.getElementById('pomot'); if (t) t.textContent = mmss(r); pill();
     if (r > 0) return;
     bip();
     if (pm.phase === 'travail') { quest('pomo'); E.dayCount('q'); pm.phase = 'pause'; pm.fin = Date.now() + MODES[pm.m][1] * 60000; E.toast('Session terminée, bravo ! Pause de ' + MODES[pm.m][1] + ' minutes.'); }
     else { pm = null; E.toast('Pause terminée. Prêt pour une nouvelle session ?'); }
     if (E.curRoute() === 'minuteur') E.rerender(); pill();
-  }, 1000);
+  }
   window.addEventListener('hashchange', function () { setTimeout(function () { pill(); verifierBadges(); }, 0); });
 
   /* ───── Bilan de la semaine : ce qui est su, ce qui est fragile, quoi réviser ensuite ───── */

@@ -431,5 +431,35 @@ window.OFFLINE_FILES = [
     "title": "E7 SLAM 2026 NDV",
     "kind": "PDF",
     "bytes": 930853
+  },
+  {
+    "path": "sujets/E7_SLAM_2022_Denas-Nouvelle-Caledonie.pdf",
+    "title": "E7 SLAM 2022 Denas-Nouvelle-Caledonie",
+    "kind": "PDF",
+    "bytes": 699806
+  },
+  {
+    "path": "sujets/E7_SLAM_2023_Yak-Nouvelle-Caledonie.pdf",
+    "title": "E7 SLAM 2023 Yak-Nouvelle-Caledonie",
+    "kind": "PDF",
+    "bytes": 530359
+  },
+  {
+    "path": "sujets/E7_SLAM_2025_Kirassur-Nouvelle-Caledonie.pdf",
+    "title": "E7 SLAM 2025 Kirassur-Nouvelle-Caledonie",
+    "kind": "PDF",
+    "bytes": 1024190
+  },
+  {
+    "path": "sujets/E7_SLAM_2025_Pucesin-Nouvelle-Caledonie.pdf",
+    "title": "E7 SLAM 2025 Pucesin-Nouvelle-Caledonie",
+    "kind": "PDF",
+    "bytes": 869511
+  },
+  {
+    "path": "sujets/E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie.pdf",
+    "title": "E7 SLAM 2026 Les-Olins-Nouvelle-Caledonie",
+    "kind": "PDF",
+    "bytes": 537923
   }
 ];

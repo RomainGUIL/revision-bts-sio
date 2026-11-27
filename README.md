@@ -1,4 +1,4 @@
-# Révision BTS SIO — version 24
+# Révision BTS SIO — version 25
 
 Application autonome pour les options SISR et SLAM. Ouvrir `index.html` dans Chrome, Edge ou Firefox. Aucun compte, serveur ou paquet à installer pour l'utilisation locale.
 
@@ -38,7 +38,8 @@ Les brouillons concernent les études de cas, le paquet de flashcards actif, Pyt
 
 ## Contenu et limites
 
-- 23 sujets officiels E7/CEJM, avec 333 questions ; 29 ensembles complémentaires, dont des sujets officiels de CGE et d'anciennes annales de maths. Total : **475 questions**, **172 notions**, **37 PDF**.
+- 28 sujets officiels E7/CEJM, avec 428 questions, tous corrigés ; 29 ensembles complémentaires, dont des sujets officiels de CGE et d'anciennes annales de maths. Total : **570 questions**, **220 notions** (dont 44 cartes « Questions du jury » de l'oral), **62 schémas**, **305 vidéos**, **42 PDF**.
+- **E7 SLAM de Nouvelle-Calédonie** (Réseau Certa, sujets publics) : Denas 2022, Yak 2023, Puces'In 2025, Kirassur 2025 et Les Olins 2026, avec 95 questions corrigées à la main (les corrigés du Réseau Certa sont réservés aux enseignants). Kirassur n'était publié qu'au format Word : converti en PDF avec LibreOffice, la mise en page peut différer légèrement de l'original. Les sujets de pays étrangers ne sont pas inclus.
 - Les corrigés sont des propositions non officielles. Leur présence et leurs liens ont été contrôlés ; leur exactitude n'a pas été intégralement certifiée. Les réponses « Méthode : » demandent notamment une vérification dans les documents du sujet.
 - La notation par mots-clés ne juge pas le raisonnement : lire la correction puis ajuster la note. La moyenne est une moyenne d'entraînement, pas une prédiction de résultat au BTS.
 - Les fréquences d'annales décrivent le corpus inclus et l'option choisie ; elles ne donnent pas la probabilité du prochain sujet. Les autres thèmes constituent une liste de travail.
@@ -52,6 +53,15 @@ Les brouillons concernent les études de cas, le paquet de flashcards actif, Pyt
 - **Configurer le jeu à plusieurs** : créer un projet gratuit sur [supabase.com](https://supabase.com), puis copier dans `js/config.js` le « Project URL » et la clé publique (« anon » ou « publishable ») de Project Settings → API. Aucune table n'est nécessaire. Ne jamais y mettre la clé « service_role » / « secret ».
 
 Le thème CGE 2027 « Le vrai du faux » est confirmé par le [Bulletin officiel](https://www.education.gouv.fr/bo/2026/Hebdo17/ESRS2608144N). La date CGE du 11 mai 2027, de 9 h à 12 h en métropole, figure au [calendrier officiel](https://www.education.gouv.fr/bo/2026/Hebdo38/ESRE2625597A). Pour les épreuves propres au SIO et les oraux, suivre la convocation.
+
+## Ajouts de la version 25
+
+- **Vidéos** (`data/videos.js`, page « Vidéos ») : 305 vidéos en français vérifiées une à une (titre d'origine et intégration contrôlés via YouTube oEmbed) pour 165 des 176 notions de cours, lues sans cookie (youtube-nocookie) et chargées seulement au clic ; anglais pour les notions d'anglais.
+- **Schémas** : 32 schémas supplémentaires (`data/schemas_plus.js` : DICP, RGPD, hachage, MFA, signature, certificats, filtrage, XSS, requêtes préparées, OWASP, SQL, droit, gestion, maths, épreuves), affichables dans les fiches.
+- **Ateliers** (`js/ateliers.js`, `data/ateliers.js`) : essai de CGE sur le thème 2027 « Le vrai du faux » (8 sujets, grille, correction par IA) et raisonnement juridique CEJM (8 cas : faits, problème, règle, application, solution).
+- **Jeux et motivation** (`js/jeux.js`) : points et niveaux calculés sur la vraie progression, 3 défis du jour, badges, pendu des sigles, jeu de paires (ports, sigles, couches OSI), minuteur Pomodoro, bilan de la semaine, nouveaux quiz chrono (ports, OSI, homologues, ports et protocoles).
+- **Outils** (`js/plus.js`) : simulateur de note du BTS (coefficients, moyenne à viser sur les épreuves restantes), orthographe et conjugaison, « mes passages » vidéo.
+- **Oral** (`data/oral_cartes.js`) : les questions du jury du simulateur deviennent des flashcards et des questions de quiz.
 
 ## Téléphone et hors ligne
 

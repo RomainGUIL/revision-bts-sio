@@ -460,6 +460,35 @@ window.ANNALES = {
    }
   },
   {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "epreuve": "E7 Cybersécurité",
+   "option": "SLAM",
+   "annee": 2022,
+   "cas": "Denas (Nouvelle-Calédonie)",
+   "fichier": "sujets/E7_SLAM_2022_Denas-Nouvelle-Caledonie.pdf",
+   "pages": 22,
+   "docs": {
+    "Doc A1": 11,
+    "Doc A2": 11,
+    "Doc A3": 12,
+    "Doc A4": 12,
+    "Doc B1": 13,
+    "Doc B2": 14,
+    "Doc B3": 14,
+    "Doc B4": 14,
+    "Doc B5": 15,
+    "Doc B6": 15,
+    "Doc C1": 16,
+    "Doc C2": 16,
+    "Doc C3": 17,
+    "Doc C4": 17,
+    "Doc D1": 19,
+    "Doc D2": 20,
+    "Doc D3": 20,
+    "Doc D4": 22
+   }
+  },
+  {
    "id": "E7_SLAM_2022_Easy2Drive",
    "epreuve": "E7 Cybersécurité",
    "option": "SLAM",
@@ -516,6 +545,31 @@ window.ANNALES = {
    }
   },
   {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "epreuve": "E7 Cybersécurité",
+   "option": "SLAM",
+   "annee": 2023,
+   "cas": "Yak (Nouvelle-Calédonie)",
+   "fichier": "sujets/E7_SLAM_2023_Yak-Nouvelle-Caledonie.pdf",
+   "pages": 18,
+   "docs": {
+    "Doc A1": 9,
+    "Doc A2": 9,
+    "Doc A3": 9,
+    "Doc A4": 13,
+    "Doc A5": 13,
+    "Doc B1": 14,
+    "Doc B2": 14,
+    "Doc B3": 15,
+    "Doc B4": 15,
+    "Doc B5": 16,
+    "Doc B6": 16,
+    "Doc C1": 17,
+    "Doc C2": 17,
+    "Doc C3": 18
+   }
+  },
+  {
    "id": "E7_SLAM_2024_GSIC",
    "epreuve": "E7 Cybersécurité",
    "option": "SLAM",
@@ -566,6 +620,92 @@ window.ANNALES = {
     "Doc D1": 18,
     "Doc D2": 18,
     "Doc D3": 18
+   }
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "epreuve": "E7 Cybersécurité",
+   "option": "SLAM",
+   "annee": 2025,
+   "cas": "Kirassur (Nouvelle-Calédonie)",
+   "fichier": "sujets/E7_SLAM_2025_Kirassur-Nouvelle-Caledonie.pdf",
+   "pages": 23,
+   "docs": {
+    "Doc 1": 9,
+    "Doc A1": 10,
+    "Doc A2": 11,
+    "Doc A3": 11,
+    "Doc A4": 11,
+    "Doc B1": 12,
+    "Doc B2": 12,
+    "Doc B3": 12,
+    "Doc B4": 13,
+    "Doc B5": 13,
+    "Doc B6": 14,
+    "Doc B7": 14,
+    "Doc B8": 16,
+    "Doc B9": 17,
+    "Doc B10": 17,
+    "Doc C1": 18,
+    "Doc C2": 18,
+    "Doc C3": 20,
+    "Doc C4": 20,
+    "Doc C5": 20,
+    "Doc C6": 21,
+    "Doc C7": 21
+   }
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "epreuve": "E7 Cybersécurité",
+   "option": "SLAM",
+   "annee": 2025,
+   "cas": "Pucesin (Nouvelle-Calédonie)",
+   "fichier": "sujets/E7_SLAM_2025_Pucesin-Nouvelle-Caledonie.pdf",
+   "pages": 22,
+   "docs": {
+    "Doc A1": 14,
+    "Doc A2": 16,
+    "Doc A3": 16,
+    "Doc A4": 17,
+    "Doc A5": 18,
+    "Doc A6": 19,
+    "Doc A7": 20,
+    "Doc B1": 20,
+    "Doc C1": 21,
+    "Doc C2": 21,
+    "Doc C3": 22,
+    "Doc C4": 22,
+    "Doc C5": 22
+   }
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "epreuve": "E7 Cybersécurité",
+   "option": "SLAM",
+   "annee": 2026,
+   "cas": "Les Olins (Nouvelle-Calédonie)",
+   "fichier": "sujets/E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie.pdf",
+   "pages": 19,
+   "docs": {
+    "Doc 1": 9,
+    "Doc 2": 10,
+    "Doc A1": 11,
+    "Doc A2": 11,
+    "Doc A3": 11,
+    "Doc A4": 12,
+    "Doc A5": 12,
+    "Doc A6": 13,
+    "Doc B1": 14,
+    "Doc B2": 14,
+    "Doc B3": 14,
+    "Doc B4": 15,
+    "Doc B5": 16,
+    "Doc B6": 17,
+    "Doc C1": 18,
+    "Doc C2": 18,
+    "Doc C3": 19,
+    "Doc C4": 19
    }
   },
   {
@@ -5792,6 +5932,341 @@ window.ANNALES = {
    "cites": []
   },
   {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#A1.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "A1.1",
+   "dossier": "Dossier A – Participation à l'atelier d'analyse de risque",
+   "mission": "Mission A1 – Les enjeux de sécurité",
+   "page": 4,
+   "contexte": "",
+   "texte": "Proposer une évaluation des quatre critères de sécurité pour les cas d'utilisation n°2 et 6.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#A2.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "A2.1",
+   "dossier": "Dossier A – Participation à l'atelier d'analyse de risque",
+   "mission": "Mission A2 – Les événements redoutés et les mesures à prendre",
+   "page": 4,
+   "contexte": "",
+   "texte": "Évaluer l'impact métier correspondant aux événements redoutés n°4 et 5.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#A2.2",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "A2.2",
+   "dossier": "Dossier A – Participation à l'atelier d'analyse de risque",
+   "mission": "Mission A2 – Les événements redoutés et les mesures à prendre",
+   "page": 4,
+   "contexte": "Le tableau \"Scénarios de risques et mesures à prévoir\" met en place des scénarios correspondants aux événements redoutés du tableau précédent.",
+   "texte": "Proposer deux mesures à prévoir pour chacun des scénarios de risques n°2 et 5.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#A2.3",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "A2.3",
+   "dossier": "Dossier A – Participation à l'atelier d'analyse de risque",
+   "mission": "Mission A2 – Les événements redoutés et les mesures à prendre",
+   "page": 4,
+   "contexte": "",
+   "texte": "Expliquer ce qui peut amener des clients peu scrupuleux à réaliser les scénarios n° 3 et 4.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#B1.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "B1.1",
+   "dossier": "Dossier B – Amélioration de l'authentification",
+   "mission": "Mission B1 – Sécurisation des mots de passe",
+   "page": 5,
+   "contexte": "",
+   "texte": "Choisir la solution qui semble la plus sécurisée en justifiant votre réponse.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#B1.2",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "B1.2",
+   "dossier": "Dossier B – Amélioration de l'authentification",
+   "mission": "Mission B1 – Sécurisation des mots de passe",
+   "page": 5,
+   "contexte": "Il est décidé d'opter pour un stockage des mots de passe hachés avec la fonction Bcrypt.",
+   "texte": "Expliquer l'importance d'ajouter un grain de sel (salage) lors de l'opération de hachage.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#B2.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "B2.1",
+   "dossier": "Dossier B – Amélioration de l'authentification",
+   "mission": "Mission B2 – Prévention des injections de code SQL",
+   "page": 5,
+   "contexte": "",
+   "texte": "Modifier le code de la méthode readByLogin de la classe ClientDao afin d’éviter les injections SQL. Vous indiquerez les numéros de ligne concernées par chaque insertion ou modification du code.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#B3.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "B3.1",
+   "dossier": "Dossier B – Amélioration de l'authentification",
+   "mission": "Mission B3 – Authentification à deux facteurs et journalisation des connexions",
+   "page": 6,
+   "contexte": "",
+   "texte": "Proposer à l’équipe de développement deux autres solutions d’authentification à deux facteurs, sans préciser la mise en œuvre.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#B3.2",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "B3.2",
+   "dossier": "Dossier B – Amélioration de l'authentification",
+   "mission": "Mission B3 – Authentification à deux facteurs et journalisation des connexions",
+   "page": 6,
+   "contexte": "",
+   "texte": "Modifier le code de la vue loginView.php pour permettre la saisie du mot de passe à usage unique fournie par la clé OTP.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#B3.3",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "B3.3",
+   "dossier": "Dossier B – Amélioration de l'authentification",
+   "mission": "Mission B3 – Authentification à deux facteurs et journalisation des connexions",
+   "page": 6,
+   "contexte": "Le code actuel ne prend pas en charge ni l'authentification à deux facteurs par clé OTP ni la journalisation des connexions indispensable au suivi des accès à l'application. Il sera nécessaire d'adapter la méthode verifLogin de la classe LoginCtrl afin : • de vérifier le code fourni par la clé OTP saisi ; • d’enregistrer dans un fichier journal (logs) toutes les tentatives de connexion à l'application : ➢ Si la connexion réussit, l'enregistrement aura les caractéristiques suivantes : Valeur du paramètre priority Structure du message LOG_INFO \"Connexion client <id du client>\" Par exemple : Connexion client 1287 ➢ Si la connexion échoue, le message est de type de la forme : Valeur du paramètre priority Structure du message LOG_WARNING \"Erreur connexion client <login >, cause : <type>” Par exemple : Erreur connexion client Az26Tk, cause : Erreur OTP <login> est l’identifiant saisi sur le formulaire de connexion. <type> peut être : • \"Erreur login/mot de passe\" si le couple login/mot de passe n’est pas valide ; • \"Erreur OTP\" si le mot de passe est valide mais que la vérification OTP a échoué.",
+   "texte": "Écrire le code nécessaire dans la méthode verifLogin de la classe LoginCtrl pour vérifier la clé OTP saisie et pour écrire dans le fichier journal (logs). Vous indiquerez les numéros de ligne où insérer le code.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#C1.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "C1.1",
+   "dossier": "Dossier C – Validation des demandes client",
+   "mission": "Mission C1 – Envoi des documents au client et signature du contrat",
+   "page": 7,
+   "contexte": "",
+   "texte": "Indiquer la condition nécessaire pour que cette solution d’échange électronique soit recevable devant les tribunaux en cas de contestation par le client.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#C1.2",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "C1.2",
+   "dossier": "Dossier C – Validation des demandes client",
+   "mission": "Mission C1 – Envoi des documents au client et signature du contrat",
+   "page": 7,
+   "contexte": "Le service juridique du groupe Denas vous sollicite dans le cadre des échanges des documents, entre le groupe Denas et le client, et impose les quatre exigences suivantes : 1. une totale confidentialité des échanges ; 2. la preuve que les documents sont authentiques et non modifiés ; 3. la preuve que le client a bien reçu les documents ; 4. la signature du client qui l'engage légalement. Après étude, il apparait qu’aucune de ces quatre exigences n'est gérée de façon satisfaisante par la messagerie électronique.",
+   "texte": "Indiquer les solutions techniques à mettre en œuvre pour répondre à chacune des quatre exigences.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#C2.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "C2.1",
+   "dossier": "Dossier C – Validation des demandes client",
+   "mission": "Mission C2 – Gestion des clients abusifs",
+   "page": 8,
+   "contexte": "",
+   "texte": "Écrire la requête qui permet d'obtenir la liste des clients ayant des demandes de plus de 24 heures non confirmées.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#C2.2",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "C2.2",
+   "dossier": "Dossier C – Validation des demandes client",
+   "mission": "Mission C2 – Gestion des clients abusifs",
+   "page": 8,
+   "contexte": "Pour chaque cli ent on souhaite afficher l'identifiant, le nom et le nombre total de pièces demandées. Pour contrer ces clients peu scrupuleux, il a été décidé d'automatiser la procédure de surveillance. Pour protéger le stock, avant qu'une demande ne soit enregistrée dan s la base de données, on doit vérifier que le client n'est pas en position d'abus. La fonction nb_abus(idClient) qui retourne le nombre de demandes abusives pour un client donné a été codée et est utilisable au sein du SGBD. Le traitement prévu est de bloq uer le client, en passant l'attribut booléen estBloque à la valeur true, et d'empêcher la création de la nouvelle demande. Un client est bloqué si le nombre d'abus est égal à 2.",
+   "texte": "Écrire le code du déclencheur (trigger) qui permet d'obtenir cette fonctionnalité.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#C2.3",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "C2.3",
+   "dossier": "Dossier C – Validation des demandes client",
+   "mission": "Mission C2 – Gestion des clients abusifs",
+   "page": 8,
+   "contexte": "On constate que certains clients ont tendance à demander davantage de pièces de certains types de façon à gêner des concurrents. En effet l'immobilisation d'un aéronef engendre des pertes financières pouvant aller jusqu’à 25 000 € par jour pour un modèle 777-300ER du constructeur Boeing, sans compter l’annulation des billets. Actuellement, un client peut demander un type de pièce sans relation avec le modèle de l'aéronef concerné par la demande. Le service en charge de la liv raison des pièces affecte une pièce à cette demande mais n'a , à ce jour , aucune possibilité de vérifier dans la base de données qu'un type de pièce est bien compatible avec un modèle d'aéronef. Un type de pièce est en général prévu pour être monté sur plusieurs modèles d'aéronef. Un commentaire sur chaque compatibilité d'un type de pièce avec un modèle d'aéronef sera utile pour affiner les recherches.",
+   "texte": "Adapter la modélisation des données existante pour intégrer la compatibilité des types de pièce avec les modèles d'aéronef.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#C2.4",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "C2.4",
+   "dossier": "Dossier C – Validation des demandes client",
+   "mission": "Mission C2 – Gestion des clients abusifs",
+   "page": 8,
+   "contexte": "",
+   "texte": "Proposer une solution pour implémenter cette contrainte métier, sans la mettre en œuvre.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#D1.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "D1.1",
+   "dossier": "Dossier D – Envoi des données de demande au progiciel de gestion intégré (PGI)",
+   "mission": "Mission D1 – Finalisation d'une interface de programmation (API) de type REST",
+   "page": 9,
+   "contexte": "",
+   "texte": "Réaliser la méthode de l'interface de programmation (API) REST située dans la classe DemandeRest qui permettra d'ajouter une demande.",
+   "docs": [
+    "Doc D1",
+    "Doc D2",
+    "Doc D3",
+    "Doc D4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#D2.1",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "D2.1",
+   "dossier": "Dossier D – Envoi des données de demande au progiciel de gestion intégré (PGI)",
+   "mission": "Mission D2 – Contrôle des données",
+   "page": 10,
+   "contexte": "",
+   "texte": "a) Compléter la méthode verifDonneesCreate de la classe DemandeService pour qu'elle contienne les contrôles demandés, en utilisant la grammaire des expressions régulières. b) Proposer un contrôle supplémentaire permettant de sécuriser davantage la date de la demande.",
+   "docs": [
+    "Doc D1",
+    "Doc D2",
+    "Doc D3",
+    "Doc D4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2022_Denas-Nouvelle-Caledonie#D2.2",
+   "sujet": "E7_SLAM_2022_Denas-Nouvelle-Caledonie",
+   "num": "D2.2",
+   "dossier": "Dossier D – Envoi des données de demande au progiciel de gestion intégré (PGI)",
+   "mission": "Mission D2 – Contrôle des données",
+   "page": 10,
+   "contexte": "Le code n'est pas demandé. La réalisation de vérifications automatisées de tests de non-régression lors de la mise à jour du code semble absolument nécessaire pour sécuriser le bon fonctionnement de l’application.",
+   "texte": "Compléter le test unitaire manquant de la classe DemandeServiceTest permettant de s’assurer du bon fonctionnement de la méthode create de la classe DemandeService.",
+   "docs": [
+    "Doc D1",
+    "Doc D2",
+    "Doc D3",
+    "Doc D4"
+   ],
+   "cites": []
+  },
+  {
    "id": "E7_SLAM_2022_Easy2Drive#A1.1",
    "sujet": "E7_SLAM_2022_Easy2Drive",
    "num": "A1.1",
@@ -6386,6 +6861,350 @@ window.ANNALES = {
     "Doc C4",
     "Doc C5",
     "Doc C6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#A1.1",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "A1.1",
+   "dossier": "Dossier A – Authentification et habilitations de l’application Holy",
+   "mission": "Mission A1 – Mobilisation des bonnes pratiques pour la classe Utilisateur",
+   "page": 4,
+   "contexte": "",
+   "texte": "Corriger les erreurs de nommage présentes dans cette méthode.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#A1.2",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "A1.2",
+   "dossier": "Dossier A – Authentification et habilitations de l’application Holy",
+   "mission": "Mission A1 – Mobilisation des bonnes pratiques pour la classe Utilisateur",
+   "page": 4,
+   "contexte": "",
+   "texte": "Proposer une documentation au format Javadoc pour cette méthode.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#A2.1",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "A2.1",
+   "dossier": "Dossier A – Authentification et habilitations de l’application Holy",
+   "mission": "Mission A2 – Authentification : validation des mots de passe",
+   "page": 4,
+   "contexte": "",
+   "texte": "Identifier la complexité des mots de passe attendue lors de l’authentification des utilisateurs.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#A2.2",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "A2.2",
+   "dossier": "Dossier A – Authentification et habilitations de l’application Holy",
+   "mission": "Mission A2 – Authentification : validation des mots de passe",
+   "page": 4,
+   "contexte": "",
+   "texte": "Écrire le code de la méthode modifierMdp de la classe Utilisateur.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#A3.1",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "A3.1",
+   "dossier": "Dossier A – Authentification et habilitations de l’application Holy",
+   "mission": "Mission A3 – Validation de l’authentification",
+   "page": 4,
+   "contexte": "",
+   "texte": "Ajouter une méthode de test verifModifierMdp pour compléter vos tests unitaires.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#A3.2",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "A3.2",
+   "dossier": "Dossier A – Authentification et habilitations de l’application Holy",
+   "mission": "Mission A3 – Validation de l’authentification",
+   "page": 4,
+   "contexte": "Face à l’augmentation constante des risques liés à la cybersécurité, Breizh-SN a proposé à sa cliente de réaliser une gestion des habilitations des utilisateurs restreignant l’accès aux éléments du menu de l’application. Votre responsable vous charge de décrire à Mme Lenvy l’utilité de cette restriction, sous forme de scénarios de risques.",
+   "texte": "Décrire un scénario de risque exploitant l’absence de restriction d’accès aux éléments du menu de l'application.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#A3.3",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "A3.3",
+   "dossier": "Dossier A – Authentification et habilitations de l’application Holy",
+   "mission": "Mission A3 – Validation de l’authentification",
+   "page": 4,
+   "contexte": "Mme Lenvy vous donne son accord pour réaliser cette restriction.",
+   "texte": "a. Écrire le code de la méthode getNiveauHabilitation de la classe Utilisateur. b. Compléter le code du constructeur de la classe AppliHoly.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B1.1",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B1.1",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B1 – Sécuriser les données personnelles",
+   "page": 5,
+   "contexte": "",
+   "texte": "Réaliser le tableau demandé par Mme Lenvy durant l’entretien.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B1.2",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B1.2",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B1 – Sécuriser les données personnelles",
+   "page": 5,
+   "contexte": "Suite à cet entretien avec Mme Lenvy, il est nécessaire de collecter le consentement des clients et de l’enregistrer dans la base de données EchapBox pour le démarchage commercial. Pour cela, la table Client doit être m odifiée pour accueillir un champ de type booléen appelé accordPubli ayant une valeur par défaut à FAUX. Après la modification, la description de la table sera celle-ci : EchapBox.Client(id, civilité, nom, prénom, dateNaiss, pseudo, mdp, adresse, c odePostal, ville, pays, tél, mél, accordPubli) La clé primaire est id.",
+   "texte": "Écrire la requête permettant de modifier la table Client de la base de données EchapBox.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B1.3",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B1.3",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B1 – Sécuriser les données personnelles",
+   "page": 5,
+   "contexte": "Si les utilisateurs ne désirent pas le donner, ils n’ont rien à faire, l’accord n’étant pas val idé par défaut. Ils ont un mois pour répondre au formulaire. Vous devez maintenant rédiger un courriel aux utilisateurs pour les avertir de cette démarche en ligne en reprenant toutes les informations nécessaires pour obtenir leur consentement éclairé.",
+   "texte": "Rédiger le corps du courriel destiné aux utilisateurs.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B1.4",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B1.4",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B1 – Sécuriser les données personnelles",
+   "page": 6,
+   "contexte": "",
+   "texte": "Proposer une solution détaillée permettant de conserver une trace du processus ainsi que l’intégrité de cette trace.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B1.5",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B1.5",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B1 – Sécuriser les données personnelles",
+   "page": 6,
+   "contexte": "Mme Lenvy envisage de faire des statistiques sur les usages de ses clients, comme par exemple connaître les achats par genre, par tranche d’âge ou par département d’origine des clients. L’ancienne base de données contient plus de données personnelles que nécessaire pour ce traitement. Il faut donc minimiser ces données afin de respecter le RGPD. Les données retenues après minimisation seront stockées dans une nouvelle table nommée ClientAnonyme.",
+   "texte": "Donner la structure de la nouvelle table ClientAnonyme en utilisant le formalisme du document B2.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": [
+    "Doc B2"
+   ]
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B2.1",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B2.1",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B2 – Détecter les agissements frauduleux",
+   "page": 7,
+   "contexte": "",
+   "texte": "Justifier le niveau de gravité affecté aux risques R1 et R2, en décrivant l’impact que ces risques pourraient avoir sur l’entreprise.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B2.2",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B2.2",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B2 – Détecter les agissements frauduleux",
+   "page": 7,
+   "contexte": "Inquiétée par l’identification de ces risques, Mme Lenvy vous demande s’il y a un moyen de vérifier si certaines de ces failles ont déjà été exploitées.",
+   "texte": "Écrire la requête permettant de visualiser la liste des clients (identifiant, nom et prénom) ayant un contrat avec un acompte versé supérieur ou égal au montant à payer.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#B2.3",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "B2.3",
+   "dossier": "Dossier B – Sécurisation de la fusion des bases de données",
+   "mission": "Mission B2 – Détecter les agissements frauduleux",
+   "page": 7,
+   "contexte": "Pour l’instant, un déclencheur ( trigger) before_insert_contrat_voyage permet de vér ifier certaines règles métier lors de l’ajout de contrats dans la base de données. Cependant, la règle imposant un montant minimal de 75 euros par participant et par jour pour un contrat n’est pas encore vérifiée.",
+   "texte": "Compléter le code du déclencheur (trigger) en ajoutant la vérification de cette règle métier.",
+   "docs": [
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#C1.1",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "C1.1",
+   "dossier": "Dossier C – Amélioration de la sécurité des applications Web",
+   "mission": "Mission C1 – Vérifier la conformité de la protection contre une attaque CSRF",
+   "page": 8,
+   "contexte": "",
+   "texte": "Décrire le fonctionnement de la protection mise en place contre une attaque de type CSRF.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#C2.1",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "C2.1",
+   "dossier": "Dossier C – Amélioration de la sécurité des applications Web",
+   "mission": "Mission C2 – Analyse des fichiers de journalisation",
+   "page": 8,
+   "contexte": "",
+   "texte": "a. Identifier tous les événements présents dans l’extrait du fichier de journalisation de l’application Désir d’Ailleurs du 10/05/2023. b. Émettre une hypothèse sur l’origine de l’événement qui attire votre attention dans une courte note à destination de votre responsable.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#C2.2",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "C2.2",
+   "dossier": "Dossier C – Amélioration de la sécurité des applications Web",
+   "mission": "Mission C2 – Analyse des fichiers de journalisation",
+   "page": 8,
+   "contexte": "Identifier tous les événements présents dans l’extrait du fichier de journalisation de l’application Désir d’Ailleurs du 10/05/2023. b. Émettre une hypothèse sur l’origine de l’événement qui attire votre attention dans une courte note à destination de votre responsable. Actuellement la table Client peut être décrite ainsi : Client(idCli, civilité, nom, prénom, dateNaiss, pseudo, mdp, adresse, codePostal, ville, pays, tél, mél, numPièceIdentité, typePièceIdentité, nationalité, estAMobilitéRéduite) La clé primaire est idCli. Lorsqu’un compte est compromis, il faut le désactiver temporairement. Ceci laissera à l’administrateur le temps de mener des vérifications et, éventuellement, de réactiver le compte ou de prendre d’autres mesures. Dans ce but, il faudrait référencer dans la base de données les tentatives de connexion des différents utilisateurs, chacun pouvant tenter plusieurs connexions. Une tentative n’est attribuée qu’à un seul utilisateur et possède un résultat (réussite ou échec).",
+   "texte": "a. Proposer, dans le formalisme de votre choix, une évolution de la base de données permettant de répondre à cette demande. b. Donner deux enregistrements illustrant une tentative de connexion par un même utilisateur.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2023_Yak-Nouvelle-Caledonie#C2.3",
+   "sujet": "E7_SLAM_2023_Yak-Nouvelle-Caledonie",
+   "num": "C2.3",
+   "dossier": "Dossier C – Amélioration de la sécurité des applications Web",
+   "mission": "Mission C2 – Analyse des fichiers de journalisation",
+   "page": 8,
+   "contexte": "Proposer, dans le formalisme de votre choix, une évolution de la base de données permettant de répondre à cette demande. b. Donner deux enregistrements illustrant une tentative de connexion par un même utilisateur.",
+   "texte": "Proposer et décrire, sans l’implémenter, une solution technique permettant de désactiver le compte.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3"
    ],
    "cites": []
   },
@@ -7105,6 +7924,1142 @@ window.ANNALES = {
     "Doc D1",
     "Doc D2",
     "Doc D3"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#A1.1",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "A1.1",
+   "dossier": "Dossier A – Prise en compte d'évènements redoutés",
+   "mission": "Mission A1 : Contrer l'évènement redouté",
+   "page": 4,
+   "contexte": "",
+   "texte": "Justifier le choix retenu d'utiliser un déclencheur (trigger) pour réaliser le contrôle.",
+   "docs": [
+    "Doc 1",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#A1.2",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "A1.2",
+   "dossier": "Dossier A – Prise en compte d'évènements redoutés",
+   "mission": "Mission A1 : Contrer l'évènement redouté",
+   "page": 4,
+   "contexte": "Une première version du déclencheur ( trigger), présentée dans le dossier documentaire, a été réalisée et vous devez la compléter pour qu'elle réponde au besoin.",
+   "texte": "a) Expliquer ce que permet de faire la requête située lignes 15 à 20. b) Écrire le code du traitement décrit lignes 22 et 23 permettant de placer le sinistre dans l'état « À vérifier ». c) Modifier le déclencheur (trigger) pour que le contrôle ne soit réalisé que pour les garanties « Bris de glace ». Indiquer les numéros des lignes concernées par la modification.",
+   "docs": [
+    "Doc 1",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#A2.1",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "A2.1",
+   "dossier": "Dossier A – Prise en compte d'évènements redoutés",
+   "mission": "Mission A2 : Détecter l'évènement suspect",
+   "page": 4,
+   "contexte": "",
+   "texte": "Modifier la requête associée à l’interface de la liste des sinistres à traiter par un gestionnaire pour qu'elle réponde aux attentes.",
+   "docs": [
+    "Doc 1",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B1.1",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B1.1",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B1 : Étude des échanges entre les sociétés partenaires, les assurés",
+   "page": 5,
+   "contexte": "",
+   "texte": "Justifier le choix de l'équipe : a) en expliquant l'évènement redouté lors de l’utilisation du protocole HTTP ; b) en expliquant comment le protocole HTTPS protège de cet évènement redouté.",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B1.2",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B1.2",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B1 : Étude des échanges entre les sociétés partenaires, les assurés",
+   "page": 5,
+   "contexte": "Deux systèmes d'authentification sont proposés, l'un pour les sociétés partenaires, l'autre pour les assurés pris en charge par les sociétés partenaires.",
+   "texte": "Expliquer pourquoi, malgré la protection qu’offre le protocole HTTPS, le système d’authentification ne renvoie pas à l'assuré la clé API de la société partenaire gérant son contrat.",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B1.3",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B1.3",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B1 : Étude des échanges entre les sociétés partenaires, les assurés",
+   "page": 5,
+   "contexte": "Les assurés utiliseront un jeton d'authentification pour utiliser les services de Kirassur. Les jetons, dès qu’ils sont générés, sont stockés dans la base de données.",
+   "texte": "Expliquer si les jetons stockés dans la base de données donnent l'accès à des informations à caractère personnel.",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B1.4",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B1.4",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B1 : Étude des échanges entre les sociétés partenaires, les assurés",
+   "page": 5,
+   "contexte": "Dans le prototype, la base de données est manipulée par une classe dédiée appelée DAO ( data access object). Il est nécessaire de s’assurer que la classe DAO a été développée dans le respect des bonnes pratiques de sécurité.",
+   "texte": "Identifier en l'expliquant la bonne pratique de sécurité implémentée par la méthode tokenEnregistrer mais non respectée par la méthode tokenCharger.",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B1.5",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B1.5",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B1 : Étude des échanges entre les sociétés partenaires, les assurés",
+   "page": 6,
+   "contexte": "",
+   "texte": "a) Justifier le contrôle de durée de validité. b) Identifier les instructions de la classe DAO qui calculent la limite de validité (date heure) ainsi que la table et le champ qui stockent cette valeur en base de données.",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B2.1",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B2.1",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B2 – Accès illicite à des données",
+   "page": 6,
+   "contexte": "",
+   "texte": "Vérifier si le code existant permet d'accéder de façon illégitime aux contrats, si oui expliquer ce qu'il faudrait faire pour l'éviter (sans coder).",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B2.2",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B2.2",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B2 – Accès illicite à des données",
+   "page": 6,
+   "contexte": "Il faut aussi envisager les moyens permettant de se protéger au niveau de l'infrastructure réseau.",
+   "texte": "Donner un moyen pour invalider, au niveau d'un réseau, une adresse IP externe ayant un comportement anormal.",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#B2.3",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "B2.3",
+   "dossier": "Dossier B – Étude de l'ouverture du système d'information aux",
+   "mission": "Mission B2 – Accès illicite à des données",
+   "page": 6,
+   "contexte": "Si, malgré la sécurité mise en œuvre, un tel incident venait à se produire, Tecassur doit mettre en place des procédures au regard de la réglementation.",
+   "texte": "Identifier les obligations que Tecassur doit respecter, dans le cadre du RGPD, suite à une violation des données personnelles associées aux contrats.",
+   "docs": [
+    "Doc 1",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6",
+    "Doc B7",
+    "Doc B8",
+    "Doc B9",
+    "Doc B10"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#C1.1",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "C1.1",
+   "dossier": "Dossier C – Journalisation des accès et gestion des alertes",
+   "mission": "Mission C1 : Journalisation des accès à la base de données et aux actions",
+   "page": 7,
+   "contexte": "",
+   "texte": "a) Compléter le code de la méthode logAction de la classe ActionManager. b) Compléter le code de la méthode enregistrerActionSensible du contrôleur pour journaliser l’action demandée si elle est sensible.",
+   "docs": [
+    "Doc 1",
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5",
+    "Doc C6",
+    "Doc C7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie#C2.1",
+   "sujet": "E7_SLAM_2025_Kirassur-Nouvelle-Caledonie",
+   "num": "C2.1",
+   "dossier": "Dossier C – Journalisation des accès et gestion des alertes",
+   "mission": "Mission C2 : Gestion des actions sensibles et modélisation d’un système",
+   "page": 8,
+   "contexte": "",
+   "texte": "Finaliser, dans le formalisme de votre choix, la schématisation des données pour intégrer l’ensemble des évolutions.",
+   "docs": [
+    "Doc 1",
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5",
+    "Doc C6",
+    "Doc C7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A1.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A1.1",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A1 – Sécurisation de l'application client lourd VerifColis",
+   "page": 4,
+   "contexte": "",
+   "texte": "Identifier la principale conséquence de cette malveillance pour Puces'In.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A1.2",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A1.2",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A1 – Sécurisation de l'application client lourd VerifColis",
+   "page": 4,
+   "contexte": "Pour contrer cette faille, votre chef de projet souhaite une adaptation de la méthode traiterUnLivre pour prendre en compte la règle de gestion suivante : « Le prix de rachat proposé ne sera enregistré dans la base que s'il ne dépasse pas 10 % du prix de revente de ce livre dans un état jugé acceptable ».",
+   "texte": "Lister les modifications à apporter à la méthode traiterUnLivre pour qu'elle intègre la règle de gestion demandée.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A2.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A2.1",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A2 – Sécurisation de l'application mobile Puces'In Rachète",
+   "page": 5,
+   "contexte": "",
+   "texte": "Identifier et justifier deux conséquences de cette malveillance pour Puces'In.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A2.2",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A2.2",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A2 – Sécurisation de l'application mobile Puces'In Rachète",
+   "page": 5,
+   "contexte": "Pour éviter ce comportement malveillant, il a été décidé de limiter le nombre de bordereaux d'expédition à quatre par mois par vendeur. Pour cela : • La méthode getNbBordereauDuMois vient d'être développée et ajoutée dans la classe VendeurDAO pour ce traitement. Elle fournit le nombre de bordereaux d'expédition générés durant le mois en cours pour le vendeur dont l’identifiant est passé en paramètre. • La signature de la méthode validerColis de la classe ColisController, responsable de la validation du colis, a déjà été modifiée afin de retourner une valeur booléenne. Pour l’instant, le code de la méthode ne permet pas de contrôler le nombre de bordereaux.",
+   "texte": "Compléter la méthode validerColis de la classe ColisController utilisée par l’interface de programmation d'application (API) REST afin qu’elle prenne en compte la limite fixée pour le nombre de bordereaux d'expédition.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A3.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A3.1",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A3 – Gestion de l'interface de programmation d'application (API) REST",
+   "page": 5,
+   "contexte": "",
+   "texte": "a) Identifier les deux tests présentant une vulnérabilité. b) Expliquer, pour chacun de ces deux tests, la vulnérabilité de l'interface de programmation d'application (API) mise en évidence. c) Indiquer, pour chacun de ces deux tests, si la vulnérabilité concerne l’intégrité, la disponibilité ou la confidentialité.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A3.2",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A3.2",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A3 – Gestion de l'interface de programmation d'application (API) REST",
+   "page": 6,
+   "contexte": "Votre responsable technique décide d’augmenter la sécurité de l'interface de programmation d'application (API) REST suite à vos remarques. En plus de la mise en place d’un système de prévention d'intrusion (IPS), il décide d’implémenter deux règles pour contrôler les requêtes vers l'interface de programmation d'application (API) REST :",
+   "texte": "Indiquer si la méthode authentifierUtilisateur de la classe VendeurDAO est sécurisée en justifiant votre réponse.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A3.3",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A3.3",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A3 – Gestion de l'interface de programmation d'application (API) REST",
+   "page": 6,
+   "contexte": "",
+   "texte": "Proposer une solution technique pour limiter le nombre de requêtes.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A3.4",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A3.4",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A3 – Gestion de l'interface de programmation d'application (API) REST",
+   "page": 6,
+   "contexte": "Sa mise en œuvre n’est pas demandée. L'équipe de développement décide d’utiliser des jetons d'authentification ( tokens) de type JSON Web Token (JWT) pour implémenter ces deux règles.",
+   "texte": "Expliquer en quoi l’utilisation d'une clé de hachage par la fonction HMAC (Hash-based message authentification code) lors de la signature d’un jeton d'authentification (token) JWT garantit son intégrité.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A3.5",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A3.5",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A3 – Gestion de l'interface de programmation d'application (API) REST",
+   "page": 6,
+   "contexte": "Elle décide également d'utiliser le protocole HTTPS pour la communication avec l'interface de programmation d'application (API) REST.",
+   "texte": "Expliquer pour quelle raison l’utilisation du protocole HTTPS est nécessaire malgré le mode d'authentification par jeton (token).",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#A3.6",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "A3.6",
+   "dossier": "Dossier A – Sécurisation des applications VerifColis et Puces’In Rachète",
+   "mission": "Mission A3 – Gestion de l'interface de programmation d'application (API) REST",
+   "page": 6,
+   "contexte": "L'intégration des jetons d'authentification ( tokens) de type JSON Web Token (JWT) dans l'interface de programmation d'application (API) REST est en phase de test. Lors des tests, des requêtes ont été envoyées à l'interface de programmation d'application (API) REST. Leurs caractéristiques sont fournies dans le dossier documentaire. Le premier test fournit une réponse satisfaisante mais le deuxième est en échec.",
+   "texte": "Donner la cause de l'échec du deuxième test en justifiant votre réponse.",
+   "docs": [
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6",
+    "Doc A7"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#B1.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "B1.1",
+   "dossier": "Dossier B – Gestion des droits sur les données à caractère personnel",
+   "mission": "Mission B1 – Contrôle du respect des obligations légales",
+   "page": 7,
+   "contexte": "",
+   "texte": "a) Donner deux droits, manquants dans la liste, que les vendeurs et les acheteurs pourront également exercer. b) Donner le délai règlementaire dont dispose Mme Mathy pour répondre aux demandes d'exercice des droits sur les données à caractère personnel transmises par les vendeurs et les acheteurs.",
+   "docs": [
+    "Doc B1"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#B1.2",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "B1.2",
+   "dossier": "Dossier B – Gestion des droits sur les données à caractère personnel",
+   "mission": "Mission B1 – Contrôle du respect des obligations légales",
+   "page": 7,
+   "contexte": "Pour être traitée, une de mande doit obligatoirement être accompagnée de la photocopie, au format PDF, d'un document officiel (passeport, carte d'identité, etc.) prouvant l'identité de la personne à l'origine de la demande. Actuellement, Mme Mathy saisit dans un tableur les caractéristiques des demandes (nom et prénom du demandeur ainsi que le droit exercé). Lorsque la demande est traitée, Mme Mathy en informe le demandeur par courriel en lui fournissant, le cas échéant, les informations nécessaires. Ce tableur et les fichiers contenant les documents officiels sont enregistrés dans un répertoire situé sur son poste de travail. En cas de besoin (par exemple : la demande n'est pas explicite ou la photocopie ne permet pas d'identifier le demandeur, etc.), Mme Mathy est amenée à échanger avec le demandeur. Seuls les échanges réalisés par courriel sont conservés dans sa boîte de messagerie durant un mois. Depuis 2018, Mme Mathy a conservé, par précaution, tous les fichiers prouvant l'identité du demandeur.",
+   "texte": "Indiquer si le choix de Mme Mathy de conserver, depuis 2018, les fichiers prouvant l'identité des demandeurs est règlementaire. Justifier votre réponse.",
+   "docs": [
+    "Doc B1"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#B1.3",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "B1.3",
+   "dossier": "Dossier B – Gestion des droits sur les données à caractère personnel",
+   "mission": "Mission B1 – Contrôle du respect des obligations légales",
+   "page": 8,
+   "contexte": "",
+   "texte": "Indiquer dans quel document le traitement de saisie des demandes d'exercice des droits sur les données à caractère personnel doit être décrit pour être conforme au RGPD.",
+   "docs": [
+    "Doc B1"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#B2.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "B2.1",
+   "dossier": "Dossier B – Gestion des droits sur les données à caractère personnel",
+   "mission": "Mission B2 – Conception de la base de données \"Gestion des droits sur les données",
+   "page": 8,
+   "contexte": "",
+   "texte": "Adapter la représentation de votre choix (diagramme de classes ou schéma entité-association) fournie dans le dossier documentaire.",
+   "docs": [
+    "Doc B1"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C1.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C1.1",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C1 - Identification d'attaques et contre-mesures",
+   "page": 9,
+   "contexte": "",
+   "texte": "a) Nommer la technique utilisée par l'attaquant. b) Nommer l’attaque dont l’employé a été victime.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C1.2",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C1.2",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C1 - Identification d'attaques et contre-mesures",
+   "page": 9,
+   "contexte": "",
+   "texte": "Donner deux moyens de sensibiliser les employés de Puces’In à ce type d’attaque.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C1.3",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C1.3",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C1 - Identification d'attaques et contre-mesures",
+   "page": 9,
+   "contexte": "",
+   "texte": "Proposer deux contre-mesures que Puces’In aurait dû prendre pour éviter ce type d’attaque.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C1.4",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C1.4",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C1 - Identification d'attaques et contre-mesures",
+   "page": 9,
+   "contexte": "À la lecture de ce ticket, l'administrateur système du site pucesin.com a souhaité mettre en place un programme de vérification automatique du renouvellement de la propriété du nom de domaine. Pour ce faire, il a demandé à un stagiaire de développer un programme qui exploite les données de la base Whois, pour le prévenir 3 mois puis 1 mois avant la date d’expiration de la propriété du nom de domaine pucesin.com. Après une première expérimentation, il constate qu’un rappel supplémentaire lui serait bien utile une semaine avant.",
+   "texte": "Compléter le programme pour que sa demande soit prise en compte.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C2.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C2.1",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C2 – Analyse de traces (logs)",
+   "page": 10,
+   "contexte": "",
+   "texte": "Identifier le type d’attaque subi par le serveur hébergeant le site pucesin.com.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C2.2",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C2.2",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C2 – Analyse de traces (logs)",
+   "page": 10,
+   "contexte": "",
+   "texte": "Identifier deux raisons possibles du succès de l’attaque.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C2.3",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C2.3",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C2 – Analyse de traces (logs)",
+   "page": 10,
+   "contexte": "",
+   "texte": "Pour chaque principe de sécurité informatique, donner un risque possible dû à l'attaque.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C2.4",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C2.4",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C2 – Analyse de traces (logs)",
+   "page": 10,
+   "contexte": "La lecture du fichier des traces ( logs) d'audit du SGBD MySQL du mois d'avril révèle plusieurs requêtes effectuées sur la base de données qui ont engendré une fuite de données.",
+   "texte": "a) Lister les acteurs devant être informés de la fuite de données. b) Indiquer dans quel document la fuite de données doit être consignée. c) Indiquer deux actions à réaliser pour garantir l'intégrité des preuves pour les autorités compétentes.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C2.5",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C2.5",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C2 – Analyse de traces (logs)",
+   "page": 10,
+   "contexte": "",
+   "texte": "Écrire la requête permettant de supprimer les privilèges attribués abusivement par ces requêtes.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie#C3.1",
+   "sujet": "E7_SLAM_2025_Pucesin-Nouvelle-Caledonie",
+   "num": "C3.1",
+   "dossier": "Dossier C – Résolution d'incidents sur le site web pucesin.com",
+   "mission": "Mission C3 – Sécurisation des accès à une base de données",
+   "page": 10,
+   "contexte": "",
+   "texte": "a) Écrire les requêtes permettant de créer le compte utilisateur statistiques qui ne peut se connecter qu’à partir de l’adresse 95.10.2.54 pour accéder uniquement aux tables utiles aux statistiques. b) Proposer une solution technique différente, sans la mettre en œuvre, pour que le compte utilisateur statistiques ne puisse accéder qu’aux données nécessaires aux statistiques et à aucune autre.",
+   "docs": [
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4",
+    "Doc C5"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#A1.1",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "A1.1",
+   "dossier": "Dossier A – Analyse des risques liés à l’application GESSYCA",
+   "mission": "Mission A1 – Récits utilisateurs et conformité avec le règlement général sur la protection des",
+   "page": 4,
+   "contexte": "",
+   "texte": "Justifier l’évaluation du récit utilisateur 28 pour chacun des critères de sécurité.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#A1.2",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "A1.2",
+   "dossier": "Dossier A – Analyse des risques liés à l’application GESSYCA",
+   "mission": "Mission A1 – Récits utilisateurs et conformité avec le règlement général sur la protection des",
+   "page": 4,
+   "contexte": "Si LES OLINS proposent un choix de plus de deux cents visuels libres de droit, il arrive régulièrement que les clients viennent avec leur propre visuel. Par exemple, commander un porte-clé avec la photo d’une personne ou d’un groupe de personnes (parents, grands-parents, frères, sœurs, etc.). Mme MARAIX est présente lorsqu’une cliente est venue commander : • des tasses avec la photo de ses enfants, qu’elle souhaite offrir aux grands-parents ; • ainsi qu’un tapis de souris avec la photo d’un paysage qu’elle a prise lors de ses dernières vacances. Mme MARAIX alerte alors Mme LE BRUZ sur la nécessité de se prémunir pa r rapport à la gestion de ces visuels personnalisés. Pour ce faire, elle propose de faire signer un document de consentement du droit à l’image aux clients concernés.",
+   "texte": "Justifier, pour chaque photo de cette commande , de l’utilité ou non d’un tel document, selon le RGPD.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#A1.3",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "A1.3",
+   "dossier": "Dossier A – Analyse des risques liés à l’application GESSYCA",
+   "mission": "Mission A1 – Récits utilisateurs et conformité avec le règlement général sur la protection des",
+   "page": 4,
+   "contexte": "",
+   "texte": "Indiquer le traitement à réaliser sur les images à caractère personnel une fois la commande livrée.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#A2.1",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "A2.1",
+   "dossier": "Dossier A – Analyse des risques liés à l’application GESSYCA",
+   "mission": "Mission A2 - Prise en charge d'une authentification incorrecte",
+   "page": 5,
+   "contexte": "",
+   "texte": "a) Expliquer pourquoi le système actuel des messages d'erreur pose problème. b) Proposer une autre solution plus sécurisée. c) Donner deux exemples de types d'attaque pouvant profiter du fait que les tentatives de connexion ne sont pas limitées.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#A3.1",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "A3.1",
+   "dossier": "Dossier A – Analyse des risques liés à l’application GESSYCA",
+   "mission": "Mission A3 – Évènements redoutés et mesures mises en place",
+   "page": 5,
+   "contexte": "",
+   "texte": "Décrire les contraintes imposées aux utilisateurs de l’application en matière de gestion des mots de passe.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#A3.2",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "A3.2",
+   "dossier": "Dossier A – Analyse des risques liés à l’application GESSYCA",
+   "mission": "Mission A3 – Évènements redoutés et mesures mises en place",
+   "page": 5,
+   "contexte": "De la même manière, la fonction d’inscription des utilisateurs a été modifiée afin de sécuriser au maximum l’application. On note l’utilisation du salage comme technique mise en œuvre.",
+   "texte": "a) Décrire la façon dont le salage a été implémenté dans le code. b) Définir la technique du salage. c) Préciser le type d’attaque auquel le salage permet, entre autres, de faire face.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc A1",
+    "Doc A2",
+    "Doc A3",
+    "Doc A4",
+    "Doc A5",
+    "Doc A6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B1.1",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B1.1",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B1 – Analyse de l’incident",
+   "page": 6,
+   "contexte": "",
+   "texte": "Repérer dans les journaux d’accès du serveur de base de données de l’application GESSYCA les éléments qui pourraient laisser penser que l’association a pu faire l’objet d’une cyber-attaque.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B1.2",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B1.2",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B1 – Analyse de l’incident",
+   "page": 6,
+   "contexte": "",
+   "texte": "Détailler les impacts de cet acte malveillant pour l’association LES OLINS.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B1.3",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B1.3",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B1 – Analyse de l’incident",
+   "page": 6,
+   "contexte": "En comparant avec les journaux ( logs) de connexion à l’application GESSYCA, Mme MARAIX retrouve le nom du membre qui a réalisé ces modifications de statut et le communique à Mme LE BRUZ. En contactant ce dernier, celui-ci lui avoue avoir noté ses identifiants de connexion dans un carnet au sein duquel il notait toutes les informations en lien avec l’association LES OLINS, carnet qu’il a malheureusement perdu quelques jours auparavant.",
+   "texte": "Citer l'une des infractions qui peut être retenue contre la personne qui a modifié le statut des commandes de façon malveillante.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B1.4",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B1.4",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B1 – Analyse de l’incident",
+   "page": 6,
+   "contexte": "",
+   "texte": "Citer le document qui précise les risques encourus par le membre qui a perdu son carnet.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B2.1",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B2.1",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B2 – Désactivation des membres de l'association",
+   "page": 7,
+   "contexte": "",
+   "texte": "Justifier, en matière de preuve, le choix de désactiver les utilisateurs plutôt que de les effacer.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B2.2",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B2.2",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B2 – Désactivation des membres de l'association",
+   "page": 7,
+   "contexte": "Une partie de cette fonctionnalité a été réalisée, Mme MARAIX vous demande de la finaliser ainsi que de procéder à une évaluation de la sécurité, en identifiant les forces et les faiblesses du code.",
+   "texte": "Identifier les trois éléments de sécurité mis en place dans le traitement de la désactivation d'un membre.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B2.3",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B2.3",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B2 – Désactivation des membres de l'association",
+   "page": 7,
+   "contexte": "",
+   "texte": "Compléter le code de la fonction desactiverUtilisateurs() pour désactiver les utilisateurs appropriés.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B2.4",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B2.4",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B2 – Désactivation des membres de l'association",
+   "page": 7,
+   "contexte": "En analysant le code fourni, vous constatez plusieurs vulnérabilités potentielles au niveau de la connexion à la base de données.",
+   "texte": "Identifier la faiblesse principale du script f_bdd.php.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B2.5",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B2.5",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B2 – Désactivation des membres de l'association",
+   "page": 7,
+   "contexte": "Par ailleurs, stocker directement les informations de connexion à la base de données dans un script PHP au niveau des sources de l’application l’expose à des risques de sécurité et de confidentialité, car ces données peuvent être plus facilement compromises en cas d’accès non autorisé au code source ou de vulnérabilité dans le code.",
+   "texte": "Proposer une alternative plus sécurisée.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#B2.6",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "B2.6",
+   "dossier": "Dossier B – Sécurisation des accès à l’application GESSYCA",
+   "mission": "Mission B2 – Désactivation des membres de l'association",
+   "page": 7,
+   "contexte": "Peu après la mise en production de cette nouvelle fonctionnalité, une panne de courant électrique de plusieurs heures s’est produite. Mme MARAIX souhaite alors s’assurer que les comptes qui devaient être désactivés l’ont bien été après la remise en route des services.",
+   "texte": "Proposer une requête qui permette de s’assurer du bon fonctionnement du traitement.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc B1",
+    "Doc B2",
+    "Doc B3",
+    "Doc B4",
+    "Doc B5",
+    "Doc B6"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#C1.1",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "C1.1",
+   "dossier": "Dossier C – Sécurisation de l’application de gestion des commandes",
+   "mission": "Mission C1 – Risque de malveillance",
+   "page": 8,
+   "contexte": "",
+   "texte": "Indiquer quel critère de la sécurité de l’information la base de données ne respecte pas concernant l’état de la commande.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#C1.2",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "C1.2",
+   "dossier": "Dossier C – Sécurisation de l’application de gestion des commandes",
+   "mission": "Mission C1 – Risque de malveillance",
+   "page": 8,
+   "contexte": "Pour toutes les commandes passées, quelles qu’elles soient, et en réponse à ce manque, Mme LE BRUZ souhaite pouvoir suivre l’historique des changements d’état : • Quel collaborateur a changé le statut ? À quelle date ? • Un commentaire spécifique peut être aussi renseigné à chaque changement d’état.",
+   "texte": "Proposer les modifications à réaliser pour répondre à ces exigences. Seuls les éléments du schéma existant qui sont concernés par l’évolution seront repris dans le formalisme de votre choix.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#C2.1",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "C2.1",
+   "dossier": "Dossier C – Sécurisation de l’application de gestion des commandes",
+   "mission": "Mission C2 - Consommation (utilisation) d’une interface de programmation (API) en données",
+   "page": 8,
+   "contexte": "",
+   "texte": "a) Donner la cause probable de l’erreur obtenue. b) Préciser le risque de sécurité OWASP auquel ce mécanisme est censé répondre.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
+   ],
+   "cites": []
+  },
+  {
+   "id": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie#C2.2",
+   "sujet": "E7_SLAM_2026_Les-Olins-Nouvelle-Caledonie",
+   "num": "C2.2",
+   "dossier": "Dossier C – Sécurisation de l’application de gestion des commandes",
+   "mission": "Mission C2 - Consommation (utilisation) d’une interface de programmation (API) en données",
+   "page": 8,
+   "contexte": "Après avoir résolu le problème précédent et toujours lors de cette phase d’essai, l’erreur 429 a été provoquée de façon volontaire.",
+   "texte": "Nommer le type d’attaque qui provoque cette erreur.",
+   "docs": [
+    "Doc 1",
+    "Doc 2",
+    "Doc C1",
+    "Doc C2",
+    "Doc C3",
+    "Doc C4"
    ],
    "cites": []
   },
