@@ -721,3 +721,33 @@ a.tile .ico { width: 22px; height: 22px; }
 .card.install .row.sp { align-items: center; gap: 1rem; }
 /* Cases mises en valeur des schémas : fond plus clair pour que le petit texte reste lisible */
 .sv-box.sv-hi { fill: color-mix(in srgb, var(--accent) 26%, var(--card)); }
+
+/* ───── Schémas cliquables et agrandissables (js/zoom.js) ───── */
+figure.schema-f { position: relative; cursor: zoom-in; padding-top: 2.1rem; transition: border-color .15s, box-shadow .15s; }
+figure.schema-f:hover { border-color: var(--accent); box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 18%, transparent); }
+figure.schema-f:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+figure.schema-f::after { content: '🔍 Agrandir'; position: absolute; top: .5rem; right: .6rem; font-size: .75rem; font-weight: 650; color: var(--accent); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .12rem .55rem; pointer-events: none; opacity: .92; }
+figure.schema-f:hover::after { background: var(--soft); border-color: var(--accent); }
+.fiche-print figure.schema-f::after { display: none; }
+@media print { figure.schema-f::after { display: none; } }
+/* Plus de contraste : sous-titres et flèches plus foncés (lisibles même en petit). */
+.sv-s { fill: var(--text2); }
+.sv-a { stroke: var(--text2); }
+.sv-ah { fill: var(--text2); }
+.schema-f figcaption { font-weight: 600; color: var(--text); }
+body.zoom-ouvert { overflow: hidden; }
+.zoom-fond { position: fixed; inset: 0; z-index: 1000; background: rgba(8, 14, 12, .82); display: flex; flex-direction: column; animation: zoomin .15s ease-out; }
+@media (prefers-reduced-motion: reduce) { .zoom-fond { animation: none; } }
+@keyframes zoomin { from { opacity: 0; } to { opacity: 1; } }
+.zoom-barre { display: flex; align-items: center; gap: .8rem; justify-content: space-between; padding: .6rem 1rem; background: var(--card); border-bottom: 1px solid var(--line); }
+.zoom-titre { font-size: 1rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zoom-btns { display: flex; align-items: center; gap: .35rem; flex-shrink: 0; }
+.zoom-b { min-width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line2); background: var(--bg2); color: var(--text); font-size: 1.15rem; font-weight: 700; cursor: pointer; }
+.zoom-b:hover { border-color: var(--accent); }
+.zoom-x { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.zoom-niv { min-width: 3.6em; text-align: center; font-size: .85rem; color: var(--text2); font-variant-numeric: tabular-nums; }
+.zoom-zone { flex: 1; overflow: auto; padding: 1.2rem; display: flex; -webkit-overflow-scrolling: touch; }
+.zoom-carte { margin: auto; background: var(--card); border-radius: 14px; padding: 1.2rem; box-shadow: 0 10px 40px rgba(0, 0, 0, .35); cursor: default; }
+.zoom-carte svg { display: block; height: auto; max-width: none; }
+@media (max-width: 600px) { .zoom-zone { padding: .6rem; } .zoom-carte { padding: .6rem; } .zoom-niv { display: none; } .zoom-barre { padding: .5rem .6rem; } }
+.zoom-aide { margin: 0; padding: .45rem 1rem; background: var(--soft); color: var(--text); font-size: .85rem; text-align: center; border-bottom: 1px solid var(--line); }
