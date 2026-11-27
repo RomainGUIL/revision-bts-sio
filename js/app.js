@@ -34,7 +34,7 @@ var STORE_KEY = 'bts-sio-revision-v1';
    S.quiz    : mes quiz [ { id, titre, qs: [ { q, opts: [4 textes, vides si non utilisés], ok: n° de la bonne, ex: explication, lim: secondes ou 0 = temps de la partie } ] } ] ; S.kbest : records du quiz chrono
    S.ctrl    : mes contrôles [ { id, titre, mat, date, consignes, texte, dossiers: [ { n, d, fiche, cards, qs } ], fs: { ok, ko } } ] */
 function blank() { return { theme: 'light', option: '', ep: 'E7', mat: 'cyber', learned: {}, cards: {}, history: [], qdone: {}, answers: {}, exam: '', fstats: {}, tpdone: {}, layout: 'bas', zoom: '',
-  fhist: {}, ostats: {}, day: {}, ia: 'chatgpt', examRun: null, examHist: [], ctrl: [], exstats: {}, days: {}, memo: {}, reals: [], planDone: {}, kbest: {}, quiz: [], flashPlus: false, lastBackup: 0, study: StudyTools.blank() }; }
+  fhist: {}, ostats: {}, day: {}, ia: 'chatgpt', examRun: null, examHist: [], ctrl: [], exstats: {}, days: {}, memo: {}, reals: [], planDone: {}, kbest: {}, quiz: [], flashPlus: false, lastBackup: 0, plus: {}, study: StudyTools.blank() }; }
 var S = blank();
 var loadError = false;
 try { S = readState(JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); } catch (e) { loadError = true; }
@@ -258,8 +258,10 @@ function themeTag(id) {
   if (st.est) return '<span class="tag acc" title="Priorité de révision indicative, sans probabilité prédictive">' + esc(THEMES[id][0]) + ' · ' + st.niveau.toLowerCase() + '</span>';
   return '<span class="tag acc" title="Thème présent dans ' + st.n + ' sujet(s) d\'annales sur ' + st.total + '">' + esc(THEMES[id][0]) + ' · ' + st.n + '/' + st.total + '</span>';
 }
-function videoLink(n) {
-  return n.video ? '<a class="btn ghost small" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=' + encodeURIComponent(n.video) + '">▶ Vidéos</a>' : '';
+function videoLink(n) {   // vidéos intégrées (data/videos.js) : page de la notion ; sinon schéma, explication et recherche ciblée
+  var v = (window.VIDEOS || {})[n.id];
+  if (v && v.length) return '<a class="btn small" href="#videos/' + n.id + '">▶ Vidéo' + (v.length > 1 ? 's' : '') + ' du cours (' + v.length + ')</a>';
+  return n.video ? '<a class="btn ghost small" href="#videos/' + n.id + '">▶ Vidéos et schéma</a>' : '';
 }
 /* Note automatique : part des groupes de mots-clés retrouvés dans la réponse (0 à 1). */
 function autoScore(q, answer) {
@@ -1444,12 +1446,12 @@ V.fiches = function () {
   ln.forEach(function (n) { (cats[n.cat] = cats[n.cat] || []).push(n); });
   return '<div class="noprint">' + pageHead('Fiches à imprimer', 'Une fiche par matière : les notions de la plus importante à la moins importante, avec le piège à éviter. Imprime-la ou enregistre-la en PDF.') +
     '<div class="chips">' + mats.map(function (x) { return '<button class="chip' + (x === m ? ' on' : '') + '" data-a="fichem" data-v="' + x + '">' + esc(MATIERES[x][0].replace(/^E\d · /, '')) + '</button>'; }).join('') + '</div>' +
-    '<div class="row" style="margin:.4rem 0 1.2rem"><button class="btn" data-a="print">Imprimer ou enregistrer en PDF</button><span class="small muted">' + ln.length + ' notions</span></div></div>' +
+    '<div class="row" style="margin:.4rem 0 1.2rem"><button class="btn" data-a="print">Imprimer ou enregistrer en PDF</button><label class="chk small"><input type="checkbox" id="ficheSch"' + (V.fiches.sch !== false ? ' checked' : '') + '> Avec les schémas</label><span class="small muted">' + ln.length + ' notions</span></div></div>' +
     '<article class="fiche-print"><header><h2>' + esc(MATIERES[m][0]) + '</h2><p class="small muted">' + esc(MATIERES[m][1]) + '</p></header>' +
     Object.keys(cats).map(function (c) {
       return '<section><h3>' + esc(c) + '</h3>' + cats[c].map(function (n) {
         var ex = EXP[n.id];
-        return '<div class="fn"><div class="fnh"><b>' + esc(n.titre) + '</b><span class="tag i' + n.imp + '">' + IMP[n.imp] + '</span></div><p>' + esc(n.a) + '</p>' + (ex ? '<p class="fnp"><b>Piège :</b> ' + esc(ex[2]) + '</p>' : '') + ((S.memo || {})[n.id] ? '<p class="fnm"><b>Ma note :</b> ' + esc(S.memo[n.id]) + '</p>' : '') + schemaHtml(n.id) + '</div>';
+        return '<div class="fn"><div class="fnh"><b>' + esc(n.titre) + '</b><span class="tag i' + n.imp + '">' + IMP[n.imp] + '</span></div><p>' + esc(n.a) + '</p>' + (ex && ex[1] ? '<p class="fnp"><b>Exemple :</b> ' + esc(ex[1]) + '</p>' : '') + (ex ? '<p class="fnp"><b>Piège :</b> ' + esc(ex[2]) + '</p>' : '') + (V.fiches.sch !== false && SCH[n.id] ? schemaHtml(n.id) : '') + ((S.memo || {})[n.id] ? '<p class="fnm"><b>Ma note :</b> ' + esc(S.memo[n.id]) + '</p>' : '') + '</div>';
       }).join('') + '</section>';
     }).join('') + '<footer class="small muted">Révision BTS SIO — fiche générée le ' + new Date().toLocaleDateString('fr-FR') + '</footer></article>';
 };
@@ -1638,9 +1640,12 @@ function khSources() {
     if (matsOf(e).length) eps.push([e, EP_COURT[e]]);
     KH_OPTS.forEach(function (o) { if (khOptPool(e + '-' + o).length >= 4) eps.push([e + '-' + o, EP_COURT[e] + ' · ' + o]); });   // quiz propres à une option (SISR ou SLAM)
   });
-  return (S.quiz || []).filter(function (z) { return z.qs.some(quizPlayable); }).map(function (z) { return ['quiz/' + z.id, 'Quiz : ' + (z.titre || 'sans titre')]; }).concat(eps, [['sigles', 'Sigles']], (S.ctrl || []).filter(function (c) { return ctrlCards(c).length >= 4; }).map(function (c) { return ['ctrl/' + c.id, 'Contrôle : ' + c.titre]; }));
+  return (S.quiz || []).filter(function (z) { return z.qs.some(quizPlayable); }).map(function (z) { return ['quiz/' + z.id, 'Quiz : ' + (z.titre || 'sans titre')]; }).concat(eps, [['sigles', 'Sigles']], (S.ctrl || []).filter(function (c) { return ctrlCards(c).length >= 4; }).map(function (c) { return ['ctrl/' + c.id, 'Contrôle : ' + c.titre]; }),
+    Object.keys(window.KH_EXTRA || {}).map(function (k) { return [k, window.KH_EXTRA[k][0]]; }));
 }
 function khItems(k) {
+  var X = window.KH_EXTRA || {};   // sources ajoutées par js/jeux.js (ports, couches OSI, orthographe…) : solo et partie à plusieurs
+  if (Object.prototype.hasOwnProperty.call(X, k)) return X[k][1]().map(function (it) { it.auto = tempsAuto(it); return it; });
   if (k.indexOf('quiz/') === 0) { var z = quizById(k.slice(5)); return z ? quizItems(z) : []; }
   if (k.indexOf('ctrl/') !== 0) return qcmBuild(k).items;
   var c = ctrlById(k.slice(5)), pool = c ? ctrlCards(c) : [];
@@ -2828,6 +2833,15 @@ setInterval(function () {
   if (o && oral && !oral.fini) { var ro = oral.t0 + oral.dur * 1000 - Date.now(); o.textContent = ro > 0 ? fmtTime(ro) : 'Temps écoulé'; o.classList.toggle('low', ro < 20000); }
 }, 1000);
 /* Version téléphone hors ligne : le « service worker » ne fonctionne que si l'application est servie par un site web (pas en ouvrant le fichier). */
+/* Pages ajoutées (js/plus.js, js/ateliers.js, js/jeux.js) : elles reçoivent les outils de l'application avant le premier affichage. */
+var PLUS_E = {
+  V: V, ACT: ACT, NAV: NAV, ICO: ICO, ico: ico, $: $, esc: esc, norm: norm, shuffle: shuffle, pick: pick, pageHead: pageHead,
+  state: function () { return S; }, save: save, toast: toast, go: go, rerender: rerender, dayCount: function (k) { dayCount(k === 'q' ? 'plus' : k); },   // les jeux ajoutés ont leur compteur : « q » reste celui des études de cas
+  notions: mesNotions, allNotions: function () { return NOT; }, matLabel: matLabel, MATIERES: MATIERES, EPREUVES: EPREUVES, IMP: IMP, SCH: SCH, EXP: EXP, schemaHtml: schemaHtml, explication: explication,
+  iaBtn: iaBtn, IA_INTRO: IA_INTRO, serie: serie, dkey: dkey, daysUntil: daysUntil, sur20: sur20, curRoute: function () { return curRoute; }
+};
+if (window.PlusTools) window.PlusTools.install(PLUS_E);
+(window.PlusModules || []).forEach(function (m) { m(PLUS_E); });
 if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
 study = StudyTools.install({
   V: V, ACT: ACT, $: $, esc: esc, norm: norm, pageHead: pageHead,
